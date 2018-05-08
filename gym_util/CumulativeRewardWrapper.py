@@ -13,3 +13,12 @@ class CumulativeRewardWrapper(RewardWrapper):
     def reward(self, reward):
         self.accumulated_reward += reward
         return self.accumulated_reward
+
+
+if __name__ == "__main__":
+    from snake import Game
+    from snake.play_human import play
+
+    env = Game(map_size=[10, 10])
+    env = CumulativeRewardWrapper(env)
+    play(env=env)

@@ -3,7 +3,7 @@ from typing import List
 
 import numpy as np
 import pygame
-from gym import Env
+from gym import Env, spaces
 
 from snake.direction import Direction
 
@@ -11,15 +11,18 @@ pygame.init()
 
 
 class Game(Env):
-    metadata = {'render.modes': ['human', 'rgb_array']}
+    metadata = {
+        'render.modes': ['human', 'rgb_array'],
+        'video.frames_per_second': 4
+    }
     reward_range = (-np.inf, np.inf)
 
-    action_space = None
-    observation_space = None
+    action_space = spaces.Discrete(4)
 
     def __init__(self, *, map_size: List[int]):
         self.initial_snake_length: int = 3
         self.map_size: np.ndarray = np.array(map_size)
+        self.observation_space = spaces.Box(low=0, high=1, shape=self.map_size, dtype=np.float32)
         self.render_scale: int = 30
 
         # Snake.
@@ -38,7 +41,7 @@ class Game(Env):
 
     def reset(self):
         self.snake_position = np.array(self.map_size / 2)
-        self.snake_direction = Direction.as_list()[np.random.randint(0, len(Direction))].as_np_array()
+        self.snake_direction = np.array(list(Direction)[np.random.randint(0, len(Direction))].value)
         self.snake_length = self.initial_snake_length
 
         self.snake_tail = deque()
@@ -48,7 +51,7 @@ class Game(Env):
     def step(self, action: Direction):
         # Don't apply a new direction if we are travelling in the opposite direction.
         # Basically don't allow the snake to instantaneously reverse direction.
-        direction = action.as_np_array()
+        direction = np.array(action.value)
         if not np.all(direction == -self.snake_direction):
             self.snake_direction = direction
 
@@ -61,10 +64,10 @@ class Game(Env):
         self.snake_position += self.snake_direction
 
         # Eat food.
-        food_eaten = False
+        food_eaten = 0
         if np.all(self.snake_position == self.food_position):
             self.food_position = self._get_free_position()
-            food_eaten = True
+            food_eaten = 1
             self.snake_length += 1
 
         collision = False
@@ -101,7 +104,7 @@ class Game(Env):
                 pygame.display.set_caption("My window")
             self.window.fill((255, 255, 255))
 
-            s: pygame.SurfaceType = pygame.Surface(self.map_size, flags=pygame.SRCALPHA)
+            s = pygame.Surface(self.map_size, flags=pygame.SRCALPHA)
             # Head.
             pygame.draw.rect(s, (0, 0, 255),
                              [self.snake_position, [1, 1]])  # TODO(wheung): Calculate grid size.
@@ -128,38 +131,3 @@ class Game(Env):
 
     def close(self):
         pass
-
-
-if __name__ == "__main__":
-    game = Game(map_size=[10, 10])
-    game.render(mode='human')
-    KEY_TO_ACTION_MAP = {
-        pygame.K_w: Direction.UP,
-        pygame.K_a: Direction.LEFT,
-        pygame.K_s: Direction.DOWN,
-        pygame.K_d: Direction.RIGHT
-    }
-
-
-    def do_game_loop():
-        update_clock = pygame.time.Clock()
-        while True:
-            # Render.
-            game.render(mode='human')
-
-            # Process events.
-            for event in pygame.event.get():  # User did something
-                if event.type == pygame.QUIT:  # If user clicked close
-                    return
-                elif event.type == pygame.KEYDOWN:
-                    observation, reward, done, info = game.step(KEY_TO_ACTION_MAP[event.key])
-                    if done:
-                        game.reset()
-
-            # Limit frame rate.
-            update_clock.tick(30)
-
-
-    do_game_loop()
-
-pygame.quit()
