@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
@@ -10,10 +11,12 @@ from genetic.distribution import Distribution
 
 class Runner:
     @staticmethod
+    @abstractmethod
     def game_constructor() -> gym.Env:
         raise NotImplementedError()
 
     @staticmethod
+    @abstractmethod
     def build_agent(observation_space: gym.Space, action_space: gym.Space):
         raise NotImplementedError()
 
@@ -56,6 +59,8 @@ class Runner:
 
         return fitnesses
 
+    @staticmethod
+    @abstractmethod
     def run_experiment(self):
         raise NotImplementedError()
 

@@ -7,7 +7,7 @@ import numpy as np
 
 from genetic import Genome
 from genetic import Runner
-from numpy_util import sigmoid, softmax, cat_ones
+from numpy_util import sigmoid, cat_ones
 from snake import Game, DistanceObservationGame, Direction
 
 
@@ -29,16 +29,16 @@ class ExperimentRunner(Runner):
         def _get_action(genome: Genome, ob: np.ndarray) -> np.ndarray:
             ob_reshaped = ob.reshape([1, np.product(ob.shape)])
             h1 = sigmoid(cat_ones(ob_reshaped).dot(genome.values[0]))
-            action_logits = softmax(cat_ones(h1).dot(genome.values[1]))
-            return np.random.choice(list(Direction), p=action_logits[0])
+            action_logits = cat_ones(h1).dot(genome.values[1])
+            return list(Direction)[np.argmax(action_logits)]
 
         return _get_action, Genome(weights)
 
     @staticmethod
     def run():
-        r = ExperimentRunner(num_agents=2000, max_workers=16)
-        steps = 10000
-        f_historical = deque(maxlen=100)
+        r = ExperimentRunner(num_agents=200, num_champions=20, max_workers=1)
+        steps = 100
+        f_historical = deque(maxlen=10)
 
         for s in range(steps):
             start_time = time()
