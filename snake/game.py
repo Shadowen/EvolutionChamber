@@ -39,8 +39,6 @@ class Game(Env):
         # Rendering.
         self.window: pygame.SurfaceType = None
 
-        self.reset()
-
     def observation(self):
         """A minimal observation. Override this as appropriate."""
         return [self.snake_position, self.snake_tail, self.food_position]
