@@ -23,7 +23,6 @@ class Agent:
         obs = self.game.reset()
         done = False
         while not done:
-            action_logits = self.get_action(self.genome, obs)
-            action = np.random.choice(list(Direction), p=action_logits[0])
+            action = self.get_action(self.genome, obs)
             obs, reward, done, info = self.game.step(action)
         return reward

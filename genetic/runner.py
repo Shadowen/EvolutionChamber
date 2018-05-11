@@ -7,44 +7,39 @@ import numpy as np
 from genetic import Agent
 from genetic import Genome
 from genetic.distribution import Distribution
-from numpy_util import sigmoid
+from numpy_util import sigmoid, softmax, cat_ones
+from snake import Direction
 from snake import Game, DistanceObservationGame
 
 
 class Runner:
     @staticmethod
-    def game_constructor():
+    def game_constructor() -> gym.Env:
         game = DistanceObservationGame(map_size=(30, 30))
         game = FitnessWrapper(game)
         return game
 
     @staticmethod
-    def build_agent(observation_space: gym.Env, action_space: gym.Env) -> \
+    def build_agent(observation_space: gym.Space, action_space: gym.Space) -> \
             Tuple[Callable[[Genome, np.ndarray], np.ndarray], Genome]:
         hidden_nodes = 18  # TODO: Tune this.
         weights = [np.random.uniform(-1, 1, size=[np.product(observation_space.shape) + 1, hidden_nodes]),
                    np.random.uniform(-1, 1, size=[hidden_nodes + 1, action_space.n]),
                    ]
 
-        def cat_ones(a):
-            return np.concatenate([a, np.ones([1, 1])], axis=1)
-
-        def softmax(x):
-            """Compute softmax values for each sets of scores in x."""
-            e_x = np.exp(x - np.max(x))
-            return e_x / e_x.sum()
-
         def _get_action(genome: Genome, ob: np.ndarray) -> np.ndarray:
             ob_reshaped = ob.reshape([1, np.product(ob.shape)])
             h1 = sigmoid(cat_ones(ob_reshaped).dot(genome.values[0]))
-            return softmax(cat_ones(h1).dot(genome.values[1]))
+            action_logits = softmax(cat_ones(h1).dot(genome.values[1]))
+            return np.random.choice(list(Direction), p=action_logits[0])
 
         return _get_action, Genome(weights)
 
-    def __init__(self, *, num_agents, max_workers):
+    def __init__(self, *, num_agents, num_champions, max_workers):
         self.max_workers = max_workers
 
         self.num_agents = num_agents
+        self.num_champions = num_champions
         self.agents = [
             Agent(env_constructor=self.game_constructor, build_agent=self.build_agent) for _ in
             range(num_agents)]
@@ -59,13 +54,17 @@ class Runner:
 
         ## Crossover and mutation.
         current_genomes = [a.genome for a in self.agents]
-        new_genomes = [current_genomes[np.argmax(fitnesses)]]  # Save the champion (current best).
-        # Breed current generation weighted by fitness.
+        # Filter out champions.
+        argsorted_indices = np.argsort(fitnesses)
+        champion_indices = argsorted_indices[-self.num_champions:]
+        population_indices =argsorted_indices[:-self.num_champions]
+        new_genomes = [current_genomes[i] for i in champion_indices]
+        # Breed remaining population weighted by fitness.
         d = Distribution(fitnesses, current_genomes)
-        for i in range(1, self.num_agents):
+        for i in population_indices:
             a, b = d.sample(n=2)
             new_genomes.append(Genome.crossover(a, b).mutate(p=0.01))
-
+        # Assign Genomes to Agents.
         for a, g in zip(self.agents, new_genomes):
             a.genome = g
 

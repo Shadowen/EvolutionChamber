@@ -15,7 +15,7 @@ class Game(Env):
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 4
     }
-    reward_range = (-np.inf, np.inf)
+    reward_range = (0, np.inf)
 
     action_space = spaces.Discrete(4)
 
@@ -110,7 +110,7 @@ class Game(Env):
         if mode == 'human':
             if self.window is None:
                 self.window = pygame.display.set_mode(self.map_size * self.render_scale, pygame.SRCALPHA)
-                pygame.display.set_caption("My window")
+                pygame.display.set_caption("Snake")
             self.window.fill((255, 255, 255))
 
             s = pygame.Surface(self.map_size, flags=pygame.SRCALPHA)
@@ -137,4 +137,5 @@ class Game(Env):
             return world
 
     def close(self):
-        pass
+        pygame.display.quit()
+        pygame.quit()
