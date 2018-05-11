@@ -54,11 +54,7 @@ class Game(Env):
         return self.observation()
 
     def step(self, action: Direction):
-        # Don't apply a new direction if we are travelling in the opposite direction.
-        # Basically don't allow the snake to instantaneously reverse direction.
-        direction = np.array(action.value)
-        if not np.all(direction == -self.snake_direction):
-            self.snake_direction = direction
+        self.snake_direction = np.array(action.value)
 
         # Update tail.
         self.snake_tail.append(self.snake_position.copy())

@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 import tensorflow as tf
@@ -25,6 +26,7 @@ class Runner:
         return output
 
     def __init__(self, *, num_agents):
+        self.max_workers = 16
         self.sess = tf.Session()
 
         self.num_agents = num_agents
@@ -41,11 +43,9 @@ class Runner:
         self.sess.__exit__(exc_type, exc_value, traceback)
 
     def evaluate(self) -> List[float]:
-        # TODO: Parallelize this.
-        fitnesses = [float('-inf') for _ in self.agents]
-        for i, a in enumerate(self.agents):
-            fitnesses[i] = a.run_iteration()
-        return fitnesses
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future = executor.map(lambda a: a.run_iteration(), self.agents)
+        return future.result()
 
     def single_iteration(self):
         fitnesses = self.evaluate()
@@ -57,7 +57,7 @@ class Runner:
         d = Distribution(fitnesses, current_genomes)
         for i in range(self.num_agents):
             a, b = d.sample(n=2)
-            new_genomes.append(Genome.crossover(a, b, p=0.5))  # TODO: Crossover probability
+            new_genomes.append(Genome.crossover(a, b))
 
         ## Mutation.
         for a, g in zip(self.agents, new_genomes):

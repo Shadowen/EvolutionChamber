@@ -1,4 +1,5 @@
 from collections import deque
+from time import time
 
 import tensorflow as tf
 
@@ -23,13 +24,17 @@ class ExperimentRunner(Runner):
 
     @staticmethod
     def run():
-        with ExperimentRunner(num_agents=20) as r:
+        with ExperimentRunner(num_agents=2000) as r:
             steps = 10000
             f_historical = deque(maxlen=100)
             for s in range(steps):
+                start_time = time()
                 f = r.single_iteration()
-                f_historical.append(sum(f) / len(f))
-                print(f"Generation {s} \t Fitness: {f_historical[-1]} (avg. {sum(f_historical) / len(f_historical)})")
+                end_time = time()
+                f_historical.append(max(f))
+                print(f"Generation {s} \t"
+                      f"Fitness: {f_historical[-1]} (avg. {sum(f_historical) / len(f_historical)})"
+                      f"in {end_time-start_time} s")
 
 
 if __name__ == '__main__':
