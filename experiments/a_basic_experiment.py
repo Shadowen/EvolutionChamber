@@ -2,16 +2,9 @@ from collections import deque
 from time import time
 
 from genetic import Runner
-from gym_util import TimestepRewardWrapper
-from snake import DistanceObservationGame
 
 
 class ExperimentRunner(Runner):
-    @staticmethod
-    def game_constructor():
-        game = DistanceObservationGame(map_size=(30, 30))
-        game = TimestepRewardWrapper(game, 0.1)
-        return game
 
     @staticmethod
     def run():

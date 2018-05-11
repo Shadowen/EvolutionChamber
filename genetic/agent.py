@@ -23,10 +23,8 @@ class Agent:
     def run_iteration(self) -> float:
         obs = self.game.reset()
         done = False
-        fitness = 0
         while not done:
             action_logits = self.get_action(self.genome, obs)
             action = np.random.choice(list(Direction), p=action_logits[0])
             obs, reward, done, info = self.game.step(action)
-            fitness += reward
-        return fitness
+        return reward

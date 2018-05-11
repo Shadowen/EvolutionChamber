@@ -7,16 +7,15 @@ import numpy as np
 from genetic import Agent
 from genetic import Genome
 from genetic.distribution import Distribution
-from gym_util import TimestepRewardWrapper
 from numpy_util import sigmoid
-from snake import RGBObservationGame
+from snake import Game, DistanceObservationGame
 
 
 class Runner:
     @staticmethod
     def game_constructor():
-        game = RGBObservationGame(map_size=(10, 10))
-        game = TimestepRewardWrapper(game, 0.1)
+        game = DistanceObservationGame(map_size=(30, 30))
+        game = FitnessWrapper(game)
         return game
 
     @staticmethod
@@ -75,6 +74,19 @@ class Runner:
 
     def run_experiment(self):
         raise NotImplementedError()
+
+
+class FitnessWrapper(gym.RewardWrapper):
+    def __init__(self, env: Game):
+        super(FitnessWrapper, self).__init__(env)
+        self.env = env
+
+    def reward(self, reward):
+        snake_length = len(self.env.snake_tail)
+        if snake_length < 10:
+            return self.env.num_steps ** 2 * 2 ** snake_length
+        else:
+            return self.env.num_steps ** 2 * 2 ** 10 * (snake_length - 9)
 
 
 if __name__ == '__main__':

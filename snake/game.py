@@ -27,6 +27,8 @@ class Game(Env):
         self.observation_space = spaces.Box(low=np.array([0, 0] * 3), high=np.array(self.map_size.tolist() * 3),
                                             dtype=np.float32)
 
+        self.num_steps = None
+
         # Snake.
         self.snake_position: np.ndarray = None
         self.snake_direction: Direction = None
@@ -43,7 +45,13 @@ class Game(Env):
         """A minimal observation. Override this as appropriate."""
         return [self.snake_position, self.snake_tail, self.food_position]
 
+    def reward(self):
+        """The reward function. Should be cumulative for GA. Override this as appropriate."""
+        return len(self.snake_tail)
+
     def reset(self):
+        self.num_steps = 0
+
         self.snake_position = np.array(self.map_size / 2, dtype=int)
         self.snake_direction = np.array(list(Direction)[np.random.randint(0, len(Direction))].value)
         self.snake_length = self.initial_snake_length
@@ -54,6 +62,7 @@ class Game(Env):
         return self.observation()
 
     def step(self, action: Direction):
+        self.num_steps += 1
         self.snake_direction = np.array(action.value)
 
         # Update tail.
@@ -81,7 +90,7 @@ class Game(Env):
         if np.any(self.snake_position < [0, 0]) or np.any(self.snake_position >= self.map_size):
             collision = True
 
-        return self.observation(), food_eaten, collision, {}
+        return self.observation(), self.reward(), collision, {}
 
     def _get_free_position(self):
         while True:
