@@ -15,7 +15,6 @@ class Agent:
                  env_constructor: Callable[[], gym.Env],
                  build_agent: Callable[
                      [gym.Space, gym.Space], Tuple[Callable[[Genome, np.ndarray], np.ndarray], Genome]]):
-        self.replica_number: int = Agent.replica_number_counter.__next__()
         self.game = env_constructor()
 
         self.get_action, self.genome = build_agent(self.game.observation_space, self.game.action_space)

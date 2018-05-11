@@ -22,8 +22,8 @@ class Runner:
     def build_agent(observation_space: gym.Env, action_space: gym.Env) -> \
             Tuple[Callable[[Genome, np.ndarray], np.ndarray], Genome]:
         hidden_nodes = 18  # TODO: Tune this.
-        weights = [np.random.random([np.product(observation_space.shape) + 1, hidden_nodes]),
-                   np.random.random([hidden_nodes + 1, action_space.n]),
+        weights = [np.random.uniform(-1, 1, size=[np.product(observation_space.shape) + 1, hidden_nodes]),
+                   np.random.uniform(-1, 1, size=[hidden_nodes + 1, action_space.n]),
                    ]
 
         def cat_ones(a):
@@ -36,8 +36,8 @@ class Runner:
 
         def _get_action(genome: Genome, ob: np.ndarray) -> np.ndarray:
             ob_reshaped = ob.reshape([1, np.product(ob.shape)])
-            h1 = sigmoid(cat_ones(ob_reshaped).dot(weights[0]))
-            return softmax(cat_ones(h1).dot(weights[1]))
+            h1 = sigmoid(cat_ones(ob_reshaped).dot(genome.values[0]))
+            return softmax(cat_ones(h1).dot(genome.values[1]))
 
         return _get_action, Genome(weights)
 
@@ -57,18 +57,17 @@ class Runner:
     def single_iteration(self):
         fitnesses = self.evaluate()
 
-        ## Crossover.
+        ## Crossover and mutation.
         current_genomes = [a.genome for a in self.agents]
-        new_genomes = []
-        # Breed current generation weighted by fitnesses.
+        new_genomes = [current_genomes[np.argmax(fitnesses)]]  # Save the champion (current best).
+        # Breed current generation weighted by fitness.
         d = Distribution(fitnesses, current_genomes)
-        for i in range(self.num_agents):
+        for i in range(1, self.num_agents):
             a, b = d.sample(n=2)
-            new_genomes.append(Genome.crossover(a, b))
+            new_genomes.append(Genome.crossover(a, b).mutate(p=0.01))
 
-        ## Mutation.
         for a, g in zip(self.agents, new_genomes):
-            a.genome = g.mutate(p=0.01)
+            a.genome = g
 
         return fitnesses
 
