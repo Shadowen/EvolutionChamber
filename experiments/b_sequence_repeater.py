@@ -23,15 +23,13 @@ class ExperimentRunner(Runner):
         def _get_action(genome: Genome, ob: np.ndarray) -> np.ndarray:
             ob_reshaped = ob.reshape([1, np.product(ob.shape)])
             action_logits = cat_ones(ob_reshaped).dot(genome.values[0])
-            # action_logits = softmax(cat_ones(ob_reshaped).dot(genome.values[0]))
-            # return np.random.choice(np.arange(action_space.n), p=action_logits[0])
             return np.argmax(action_logits)
 
         return _get_action, Genome(weights)
 
     @staticmethod
     def run():
-        r = ExperimentRunner(num_agents=200, num_champions=10, max_workers=16)
+        r = ExperimentRunner(num_agents=200, num_champions=20, max_workers=16)
         steps = 100
         f_historical = deque(maxlen=5)
         for s in range(steps):

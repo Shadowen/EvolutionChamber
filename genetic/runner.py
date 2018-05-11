@@ -1,39 +1,21 @@
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Tuple, Callable
+from typing import List
 
 import gym
 import numpy as np
 
-from genetic import Agent
-from genetic import Genome
+from genetic import Agent, Genome
 from genetic.distribution import Distribution
-from numpy_util import sigmoid, softmax, cat_ones
-from snake import Direction
-from snake import Game, DistanceObservationGame
 
 
 class Runner:
     @staticmethod
     def game_constructor() -> gym.Env:
-        game = DistanceObservationGame(map_size=(30, 30))
-        game = FitnessWrapper(game)
-        return game
+        raise NotImplementedError()
 
     @staticmethod
-    def build_agent(observation_space: gym.Space, action_space: gym.Space) -> \
-            Tuple[Callable[[Genome, np.ndarray], np.ndarray], Genome]:
-        hidden_nodes = 18  # TODO: Tune this.
-        weights = [np.random.uniform(-1, 1, size=[np.product(observation_space.shape) + 1, hidden_nodes]),
-                   np.random.uniform(-1, 1, size=[hidden_nodes + 1, action_space.n]),
-                   ]
-
-        def _get_action(genome: Genome, ob: np.ndarray) -> np.ndarray:
-            ob_reshaped = ob.reshape([1, np.product(ob.shape)])
-            h1 = sigmoid(cat_ones(ob_reshaped).dot(genome.values[0]))
-            action_logits = softmax(cat_ones(h1).dot(genome.values[1]))
-            return np.random.choice(list(Direction), p=action_logits[0])
-
-        return _get_action, Genome(weights)
+    def build_agent(observation_space: gym.Space, action_space: gym.Space):
+        raise NotImplementedError()
 
     def __init__(self, *, num_agents, num_champions, max_workers):
         self.max_workers = max_workers
@@ -45,8 +27,12 @@ class Runner:
             range(num_agents)]
 
     def evaluate(self) -> List[float]:
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            generator = executor.map(lambda a: a.run_iteration(), self.agents)
+        if self.max_workers == 1:
+            generator = (a.run_iteration() for a in self.agents)
+        else:
+            # TODO: See if parallelization actually helps...
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                generator = executor.map(lambda a: a.run_iteration(), self.agents)
         return list(generator)
 
     def single_iteration(self):
@@ -57,7 +43,7 @@ class Runner:
         # Filter out champions.
         argsorted_indices = np.argsort(fitnesses)
         champion_indices = argsorted_indices[-self.num_champions:]
-        population_indices =argsorted_indices[:-self.num_champions]
+        population_indices = argsorted_indices[:-self.num_champions]
         new_genomes = [current_genomes[i] for i in champion_indices]
         # Breed remaining population weighted by fitness.
         d = Distribution(fitnesses, current_genomes)
@@ -72,19 +58,6 @@ class Runner:
 
     def run_experiment(self):
         raise NotImplementedError()
-
-
-class FitnessWrapper(gym.RewardWrapper):
-    def __init__(self, env: Game):
-        super(FitnessWrapper, self).__init__(env)
-        self.env = env
-
-    def reward(self, reward):
-        snake_length = len(self.env.snake_tail)
-        if snake_length < 10:
-            return self.env.num_steps ** 2 * 2 ** snake_length
-        else:
-            return self.env.num_steps ** 2 * 2 ** 10 * (snake_length - 9)
 
 
 if __name__ == '__main__':
