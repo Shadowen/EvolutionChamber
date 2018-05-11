@@ -25,8 +25,8 @@ class Runner:
         output = tf.layers.dense(inputs=h2, units=action_space.n, activation=tf.nn.softmax)
         return output
 
-    def __init__(self, *, num_agents):
-        self.max_workers = 16
+    def __init__(self, *, num_agents, max_workers):
+        self.max_workers = max_workers
         self.sess = tf.Session()
 
         self.num_agents = num_agents
@@ -44,8 +44,8 @@ class Runner:
 
     def evaluate(self) -> List[float]:
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future = executor.map(lambda a: a.run_iteration(), self.agents)
-        return future.result()
+            generator = executor.map(lambda a: a.run_iteration(), self.agents)
+        return list(generator)
 
     def single_iteration(self):
         fitnesses = self.evaluate()

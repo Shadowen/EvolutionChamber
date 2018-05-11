@@ -34,16 +34,23 @@ class Genome:
 
         c = []
         for x, y in zip(a.values, b.values):
-            randR = np.random.randint(x.shape[0])
-            randC = np.random.randint(x.shape[1])
+            # Figure out what shapes we're working with.
+            # We want to do this by reshaping so that we don't copy arrays.
+            original_shape = x.shape
+            flat_shape = np.product(x.shape)
 
-            z = np.empty_like(x)
-            for i in range(x.shape[0]):
-                for j in range(x.shape[1]):
-                    if i < randR or (i == randR and j <= randC):
-                        z[i, j] = x[i, j]
-                    else:
-                        z[i, j] = y[i, j]
-                c.append(z)
+            # Flatten x and y.
+            x.shape = flat_shape
+            y.shape = flat_shape
+            r = np.random.randint(flat_shape)
 
+            # Compute the crossed over matrix.
+            z = np.concatenate((x[:r], y[r:]))
+            # Return all the arrays to their original shapes.
+            x.shape = original_shape
+            y.shape = original_shape
+            z.shape = original_shape
+            c.append(z)
+
+        # Assemble the full Genome from the new weights.
         return Genome(c)

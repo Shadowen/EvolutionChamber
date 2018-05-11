@@ -24,7 +24,7 @@ class ExperimentRunner(Runner):
 
     @staticmethod
     def run():
-        with ExperimentRunner(num_agents=2000) as r:
+        with ExperimentRunner(num_agents=200) as r:
             steps = 10000
             f_historical = deque(maxlen=100)
             for s in range(steps):
@@ -33,7 +33,7 @@ class ExperimentRunner(Runner):
                 end_time = time()
                 f_historical.append(max(f))
                 print(f"Generation {s} \t"
-                      f"Fitness: {f_historical[-1]} (avg. {sum(f_historical) / len(f_historical)})"
+                      f"Fitness: {f_historical[-1]} (moving avg. {sum(f_historical) / len(f_historical)}) "
                       f"in {end_time-start_time} s")
 
 
