@@ -9,14 +9,13 @@ from snake import Game
 class DistanceObservationGame(Game):
     def __init__(self, *args, **kwargs):
         super(DistanceObservationGame, self).__init__(*args, **kwargs)
-        max_distance = np.sqrt(np.sum(self.map_size ** 2))
-        self.observation_space = spaces.Box(low=0, high=max_distance, shape=[8, 3],
+        self.max_distance = np.sqrt(np.sum(self.map_size ** 2))
+        self.observation_space = spaces.Box(low=0, high=self.max_distance, shape=[8, 3],
                                             dtype=np.float32)
 
         self.observation_directions = [np.array(d) for d in itertools.product(*([[-1, 0, 1]] * 2)) if not d == (0, 0)]
         assert len(self.observation_directions) == 8, "observation_directions generated improperly!"
         # Observations to return when nothing is observed in a direction.
-        self.null_observation = [None, max_distance, 0]
 
     def is_occupied(self, p):
         """
@@ -60,11 +59,13 @@ class DistanceObservationGame(Game):
                         wall_distance = d
                         break
 
+            # If tail is not present, assume max_distance.
             if tail_distance == 0:
-                tail_distance = self.null_observation[1]
-            if food_distance == 0:
-                food_distance = self.null_observation[2]
-            obs.append((wall_distance, tail_distance, food_distance))
+                tail_distance = self.max_distance
+            # Clamp food distance to 0 or 1.
+            if food_distance > 0:
+                food_distance = 1
+            obs.append((1 / wall_distance, 1 / tail_distance, food_distance))
 
         return np.array(obs)
 

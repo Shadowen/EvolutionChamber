@@ -1,12 +1,14 @@
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
+from typing import List, Tuple, Callable
 
-import tensorflow as tf
+import gym
+import numpy as np
 
 from genetic import Agent
 from genetic import Genome
 from genetic.distribution import Distribution
 from gym_util import TimestepRewardWrapper
+from numpy_util import sigmoid
 from snake import RGBObservationGame
 
 
@@ -18,29 +20,35 @@ class Runner:
         return game
 
     @staticmethod
-    def build_agent(input_placeholder, action_space):
-        observation_reshaped = tf.reshape(input_placeholder, shape=[1, -1])
-        h1 = tf.layers.dense(inputs=observation_reshaped, units=5, activation=tf.sigmoid)
-        h2 = tf.layers.dense(inputs=h1, units=8, activation=tf.sigmoid)
-        output = tf.layers.dense(inputs=h2, units=action_space.n, activation=tf.nn.softmax)
-        return output
+    def build_agent(observation_space: gym.Env, action_space: gym.Env) -> \
+            Tuple[Callable[[Genome, np.ndarray], np.ndarray], Genome]:
+        hidden_nodes = 18  # TODO: Tune this.
+        weights = [np.random.random([np.product(observation_space.shape) + 1, hidden_nodes]),
+                   np.random.random([hidden_nodes + 1, action_space.n]),
+                   ]
+
+        def cat_ones(a):
+            return np.concatenate([a, np.ones([1, 1])], axis=1)
+
+        def softmax(x):
+            """Compute softmax values for each sets of scores in x."""
+            e_x = np.exp(x - np.max(x))
+            return e_x / e_x.sum()
+
+        def _get_action(genome: Genome, ob: np.ndarray) -> np.ndarray:
+            ob_reshaped = ob.reshape([1, np.product(ob.shape)])
+            h1 = sigmoid(cat_ones(ob_reshaped).dot(weights[0]))
+            return softmax(cat_ones(h1).dot(weights[1]))
+
+        return _get_action, Genome(weights)
 
     def __init__(self, *, num_agents, max_workers):
         self.max_workers = max_workers
-        self.sess = tf.Session()
 
         self.num_agents = num_agents
         self.agents = [
-            Agent(env_constructor=self.game_constructor, build_agent=self.build_agent, sess=self.sess) for _ in
+            Agent(env_constructor=self.game_constructor, build_agent=self.build_agent) for _ in
             range(num_agents)]
-
-    def __enter__(self) -> 'Runner':
-        self.sess.__enter__()
-        self.sess.run(tf.global_variables_initializer())
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.sess.__exit__(exc_type, exc_value, traceback)
 
     def evaluate(self) -> List[float]:
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
@@ -51,7 +59,7 @@ class Runner:
         fitnesses = self.evaluate()
 
         ## Crossover.
-        current_genomes = [a.get_genome() for a in self.agents]
+        current_genomes = [a.genome for a in self.agents]
         new_genomes = []
         # Breed current generation weighted by fitnesses.
         d = Distribution(fitnesses, current_genomes)
@@ -61,7 +69,7 @@ class Runner:
 
         ## Mutation.
         for a, g in zip(self.agents, new_genomes):
-            a.set_genome(g.mutate(p=0.01))
+            a.genome = g.mutate(p=0.01)
 
         return fitnesses
 
@@ -75,9 +83,9 @@ if __name__ == '__main__':
         return np.convolve(data, np.ones((N,)) / N, mode='valid')
 
 
-    with Runner(num_agents=10) as r:
-        f_historical = []
-        for _ in range(1000):
-            f = r.single_iteration()
-            f_historical.append(sum(f))
-        print(moving_average(f_historical, N=100))
+    r = Runner(num_agents=10, max_workers=2)
+    f_historical = []
+    for _ in range(100):
+        f = r.single_iteration()
+        f_historical.append(sum(f))
+    print(moving_average(f_historical, N=100))
