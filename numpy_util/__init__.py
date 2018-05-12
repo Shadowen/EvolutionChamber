@@ -1,5 +1,7 @@
 import numpy as np
 
+from numpy_util.distribution import Distribution
+
 
 def sigmoid(x, ):
     return 1 / (1 + np.exp(-x))

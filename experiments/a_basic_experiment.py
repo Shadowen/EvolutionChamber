@@ -12,6 +12,8 @@ from snake import Game, DistanceObservationGame, Direction
 
 
 class ExperimentRunner(Runner):
+    gameClass = Game
+
     @staticmethod
     def game_constructor() -> gym.Env:
         game = DistanceObservationGame(map_size=(30, 30))
@@ -36,18 +38,21 @@ class ExperimentRunner(Runner):
 
     @staticmethod
     def run():
-        r = ExperimentRunner(num_agents=200, num_champions=20, max_workers=1)
-        steps = 100
-        f_historical = deque(maxlen=10)
+        from experiments.util import get_empty_data_file
 
-        for s in range(steps):
-            start_time = time()
-            f = r.single_iteration()
-            end_time = time()
-            f_historical.append(max(f))
-            print(f"Generation {s} \t"
-                  f"Fitness: {f_historical[-1]} (moving avg. {sum(f_historical) / len(f_historical)}) "
-                  f"in {end_time-start_time} s")
+        with open(get_empty_data_file('data.csv'), 'w') as f:
+            r = ExperimentRunner(num_agents=200, num_champions=20, max_workers=1, info_file=f)
+            steps = 100
+            f_historical = deque(maxlen=10)
+
+            for s in range(steps):
+                start_time = time()
+                f = r.single_iteration()
+                end_time = time()
+                f_historical.append(max(f))
+                print(f"Generation {s} \t"
+                      f"Fitness: {f_historical[-1]} (moving avg. {sum(f_historical) / len(f_historical)}) "
+                      f"in {end_time-start_time} s")
 
 
 class FitnessWrapper(gym.RewardWrapper):

@@ -7,8 +7,6 @@ from gym import Env, spaces
 
 from snake.direction import Direction
 
-pygame.init()
-
 
 class Game(Env):
     metadata = {
@@ -16,6 +14,7 @@ class Game(Env):
         'video.frames_per_second': 4
     }
     reward_range = (0, np.inf)
+    info_fields = ['timesteps']
 
     action_space = spaces.Discrete(4)
 
@@ -135,7 +134,3 @@ class Game(Env):
                 world[t[0], t[1], :] = 255
             world[self.food_position, 1] = 255
             return world
-
-    def close(self):
-        pygame.display.quit()
-        pygame.quit()

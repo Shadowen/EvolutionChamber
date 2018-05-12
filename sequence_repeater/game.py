@@ -1,8 +1,8 @@
+from typing import Dict
+
 import numpy as np
 import pygame
 from gym import Env, spaces
-
-pygame.init()
 
 
 class Game(Env):
@@ -11,10 +11,12 @@ class Game(Env):
         'video.frames_per_second': 4
     }
     reward_range = (0, np.inf)
+    info_fields = ['timesteps']
 
-    def __init__(self, max_num):
+    def __init__(self, *, max_num, max_timesteps):
         # Game.
         self.max_num = max_num
+        self.max_timesteps = max_timesteps
         self.correct_answer = None
         self.timesteps = None
 
@@ -31,6 +33,9 @@ class Game(Env):
         ob[self.correct_answer] = 1
         return ob
 
+    def build_info_dict(self) -> Dict:
+        return {'timesteps': self.timesteps}
+
     def reset(self):
         self.correct_answer = np.random.randint(4)
         self.timesteps = 1
@@ -38,6 +43,7 @@ class Game(Env):
 
     def step(self, action):
         done = False
+        info = None
         if action == self.correct_answer:
             self.timesteps += 1
             self.correct_answer = np.random.randint(4)
@@ -45,28 +51,12 @@ class Game(Env):
             done = True
 
         # Prevent infinite loop.
-        if self.timesteps > 100:
+        if self.timesteps > self.max_timesteps:
             done = True
 
-        return self.observation(), self.timesteps ** 2, done, {}
+        if done:
+            info = self.build_info_dict()
+        return self.observation(), self.timesteps ** 2, done, info
 
     def seed(self, seed=0):
         np.random.seed(seed)
-
-    def render(self, mode='human'):
-        if mode == 'human':
-            if self.window is None:
-                self.window = pygame.display.set_mode([self.max_num] * 2 * self.render_scale, pygame.SRCALPHA)
-                pygame.display.set_caption("My window")
-            self.window.fill((255, 255, 255))
-
-            s = pygame.Surface([self.max_num] * 2, flags=pygame.SRCALPHA)
-            # TODO: Draw stuff on  s.
-            # Scale surface to window size and blit.
-            s = pygame.transform.flip(s, False, True)
-            s = pygame.transform.scale(s, self.map_size * self.render_scale)
-            self.window.blit(s, [0, 0])
-
-            pygame.display.flip()
-        elif mode == 'rgb_array':
-            raise NotImplementedError()

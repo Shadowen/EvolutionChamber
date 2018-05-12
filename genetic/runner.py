@@ -1,15 +1,18 @@
+import csv
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
+from typing import Iterable, Dict, Any
 
 import gym
 import numpy as np
 
 from genetic import Agent, Genome
-from genetic.distribution import Distribution
+from numpy_util import Distribution
 
 
 class Runner:
+    gameClass = None  # TODO: Discover this automatically.
+
     @staticmethod
     @abstractmethod
     def game_constructor() -> gym.Env:
@@ -20,27 +23,32 @@ class Runner:
     def build_agent(observation_space: gym.Space, action_space: gym.Space):
         raise NotImplementedError()
 
-    def __init__(self, *, num_agents, num_champions, max_workers):
-        self.max_workers = max_workers
+    def __init__(self, *, num_agents, num_champions, info_file=None, max_workers=1):
 
         self.num_agents = num_agents
         self.num_champions = num_champions
         self.agents = [
             Agent(env_constructor=self.game_constructor, build_agent=self.build_agent) for _ in
             range(num_agents)]
+        self.generation = 0
 
-    def evaluate(self) -> List[float]:
+        self.info_file_writer = None
+        if info_file is not None:
+            self.info_file_writer = csv.DictWriter(info_file, ['generation'] + self.gameClass.info_fields)
+            self.info_file_writer.writeheader()
+        self.max_workers = max_workers
+
+    def evaluate(self) -> Iterable[Any]:
         if self.max_workers == 1:
             generator = (a.run_iteration() for a in self.agents)
         else:
             # TODO: See if parallelization actually helps...
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 generator = executor.map(lambda a: a.run_iteration(), self.agents)
-        return list(generator)
+        return zip(*generator)
 
-    def single_iteration(self):
-        fitnesses = self.evaluate()
-
+    def do_selection(self, fitnesses: Iterable[float]) -> None:
+        """Modify the genomes of the agents to create the next generation."""
         ## Crossover and mutation.
         current_genomes = [a.genome for a in self.agents]
         # Filter out champions.
@@ -57,23 +65,27 @@ class Runner:
         for a, g in zip(self.agents, new_genomes):
             a.genome = g
 
+    def record_info(self, generation: int, info: Dict) -> None:
+        """Record the given info dict to disk."""
+        if self.info_file_writer is not None:
+            d = {'generation': generation}
+            for k in self.gameClass.info_fields:
+                d[k] = [i[k] for i in info]
+            self.info_file_writer.writerow(d)
+
+    def single_iteration(self):
+        """
+        Run one iteration of GA and return the fitnesses of the population.
+        :returns a list of the fitnesses of the agents currently in this population.
+        """
+        self.generation += 1
+
+        fitnesses, info = self.evaluate()
+        self.do_selection(fitnesses)
+        self.record_info(self.generation, info)
         return fitnesses
 
     @staticmethod
     @abstractmethod
     def run_experiment(self):
         raise NotImplementedError()
-
-
-if __name__ == '__main__':
-    def moving_average(data, N):
-        import numpy as np
-        return np.convolve(data, np.ones((N,)) / N, mode='valid')
-
-
-    r = Runner(num_agents=10, max_workers=2)
-    f_historical = []
-    for _ in range(100):
-        f = r.single_iteration()
-        f_historical.append(sum(f))
-    print(moving_average(f_historical, N=100))
