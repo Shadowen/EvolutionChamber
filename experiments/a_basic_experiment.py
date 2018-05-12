@@ -34,12 +34,13 @@ class ExperimentRunner(Runner):
 
         return _get_action, Genome(weights)
 
-    @staticmethod
-    def run():
+    @classmethod
+    def run(cls):
         from experiments.util import get_empty_data_file
 
         with open(get_empty_data_file('data.csv'), 'w') as f:
-            r = ExperimentRunner(num_agents=200, num_champions=20, max_workers=1, info_file=f)
+            r = cls.__new__(cls)
+            r.__init__(num_agents=200, num_champions=20, max_workers=1, info_file=f)
             steps = 100
             f_historical = deque(maxlen=10)
 
@@ -59,6 +60,7 @@ class FitnessWrapper(gym.RewardWrapper):
         super(FitnessWrapper, self).__init__(env)
         self.env = env
 
+    # TODO: Replace this with a __missing__ attribute?
     @property
     def info_fields(self):
         return self.env.info_fields

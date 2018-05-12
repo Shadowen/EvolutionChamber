@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 import experiments.util
 
-experiment_name = 'b_sequence_repeater.py'
+experiment_name = 'e_survival_experiment.py'
 with open(os.path.join(experiments.util.BASE_DATA_DIR, experiment_name, 'data.csv'), 'r') as f:
     generation = []
     timestep = []
@@ -18,12 +18,12 @@ with open(os.path.join(experiments.util.BASE_DATA_DIR, experiment_name, 'data.cs
     timestep = np.array(timestep)
 
     # Do some calculations.
-    t = np.mean(timestep, axis=1)
+    m = np.mean(timestep, axis=1)
     q_1 = np.percentile(timestep, q=25, axis=1)
     q_2 = np.percentile(timestep, q=50, axis=1)
     q_3 = np.percentile(timestep, q=75, axis=1)
 
     # Plot
-    plt.plot(generation, t, 'k-')
+    plt.plot(generation, q_2, 'k-')
     plt.fill_between(generation, q_1, q_3)
     plt.show()

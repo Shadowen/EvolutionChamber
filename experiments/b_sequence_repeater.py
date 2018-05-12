@@ -27,13 +27,14 @@ class ExperimentRunner(Runner):
 
         return _get_action, Genome(weights)
 
-    @staticmethod
-    def run():
+    @classmethod
+    def run(cls):
         from experiments.util import get_empty_data_file
 
         with open(get_empty_data_file('data.csv'), 'w') as f:
-            r = ExperimentRunner(num_agents=200, num_champions=20, info_file=f, max_workers=16)
-            steps = 250
+            r = cls.__new__(cls)
+            r.__init__(num_agents=200, num_champions=2, info_file=f, max_workers=16)
+            steps = 10
             f_historical = deque(maxlen=5)
             for s in range(1, steps + 1):
                 start_time = time()

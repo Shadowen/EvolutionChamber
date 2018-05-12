@@ -87,7 +87,7 @@ class Runner:
         self.record_info(self.generation, info)
         return fitnesses
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def run_experiment(self):
+    def run_experiment(cls):
         raise NotImplementedError()
