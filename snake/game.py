@@ -14,7 +14,6 @@ class Game(Env):
         'video.frames_per_second': 4
     }
     reward_range = (0, np.inf)
-    info_fields = ['timesteps']
 
     action_space = spaces.Discrete(4)
 
@@ -60,6 +59,11 @@ class Game(Env):
         self.food_position = self._get_free_position()
         return self.observation()
 
+    info_fields = ['timesteps', 'snake_length']
+
+    def create_info_list(self):
+        return [self.num_steps, len(self.snake_tail)]
+
     def step(self, action: Direction):
         self.num_steps += 1
         self.snake_direction = np.array(action.value)
@@ -89,7 +93,7 @@ class Game(Env):
         if np.any(self.snake_position < [0, 0]) or np.any(self.snake_position >= self.map_size):
             collision = True
 
-        return self.observation(), self.reward(), collision, {}
+        return self.observation(), self.reward(), collision, self.create_info_list()
 
     def _get_free_position(self):
         while True:

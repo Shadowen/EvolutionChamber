@@ -11,8 +11,6 @@ from numpy_util import cat_ones
 
 
 class ExperimentRunner(Runner):
-    gameClass = sequence_repeater.Game
-
     @staticmethod
     def game_constructor() -> gym.Env:
         return sequence_repeater.Game(max_num=4, max_timesteps=100)

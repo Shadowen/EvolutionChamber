@@ -12,8 +12,6 @@ from snake import Game, DistanceObservationGame, Direction
 
 
 class ExperimentRunner(Runner):
-    gameClass = Game
-
     @staticmethod
     def game_constructor() -> gym.Env:
         game = DistanceObservationGame(map_size=(30, 30))
@@ -49,7 +47,7 @@ class ExperimentRunner(Runner):
                 start_time = time()
                 f = r.single_iteration()
                 end_time = time()
-                f_historical.append(max(f))
+                f_historical.append(sum(f) / len(f))
                 print(f"Generation {s} \t"
                       f"Fitness: {f_historical[-1]} (moving avg. {sum(f_historical) / len(f_historical)}) "
                       f"in {end_time-start_time} s")
@@ -59,6 +57,10 @@ class FitnessWrapper(gym.RewardWrapper):
     def __init__(self, env: Game):
         super(FitnessWrapper, self).__init__(env)
         self.env = env
+
+    @property
+    def info_fields(self):
+        return self.env.info_fields
 
     def reward(self, reward):
         snake_length = len(self.env.snake_tail)

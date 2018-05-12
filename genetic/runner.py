@@ -11,8 +11,6 @@ from numpy_util import Distribution
 
 
 class Runner:
-    gameClass = None  # TODO: Discover this automatically.
-
     @staticmethod
     @abstractmethod
     def game_constructor() -> gym.Env:
@@ -28,13 +26,15 @@ class Runner:
         self.num_agents = num_agents
         self.num_champions = num_champions
         self.agents = [
-            Agent(env_constructor=self.game_constructor, build_agent=self.build_agent) for _ in
+            Agent(env=self.game_constructor(), build_agent=self.build_agent) for _ in
             range(num_agents)]
+        self.envType = self.agents[0].env
+
         self.generation = 0
 
         self.info_file_writer = None
         if info_file is not None:
-            self.info_file_writer = csv.DictWriter(info_file, ['generation'] + self.gameClass.info_fields)
+            self.info_file_writer = csv.DictWriter(info_file, ['generation'] + self.envType.info_fields)
             self.info_file_writer.writeheader()
         self.max_workers = max_workers
 
@@ -49,7 +49,7 @@ class Runner:
 
     def do_selection(self, fitnesses: Iterable[float]) -> None:
         """Modify the genomes of the agents to create the next generation."""
-        ## Crossover and mutation.
+        # Crossover and mutation.
         current_genomes = [a.genome for a in self.agents]
         # Filter out champions.
         argsorted_indices = np.argsort(fitnesses)
@@ -69,8 +69,8 @@ class Runner:
         """Record the given info dict to disk."""
         if self.info_file_writer is not None:
             d = {'generation': generation}
-            for k in self.gameClass.info_fields:
-                d[k] = [i[k] for i in info]
+            for a, k in enumerate(self.envType.info_fields):
+                d[k] = [i[a] for i in info]
             self.info_file_writer.writerow(d)
 
     def single_iteration(self):

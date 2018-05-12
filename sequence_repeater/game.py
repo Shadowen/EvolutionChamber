@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import List
 
 import numpy as np
 import pygame
@@ -11,7 +11,6 @@ class Game(Env):
         'video.frames_per_second': 4
     }
     reward_range = (0, np.inf)
-    info_fields = ['timesteps']
 
     def __init__(self, *, max_num, max_timesteps):
         # Game.
@@ -33,8 +32,10 @@ class Game(Env):
         ob[self.correct_answer] = 1
         return ob
 
-    def build_info_dict(self) -> Dict:
-        return {'timesteps': self.timesteps}
+    info_fields = ['timesteps']
+
+    def build_info_list(self) -> List:
+        return [self.timesteps]
 
     def reset(self):
         self.correct_answer = np.random.randint(4)
@@ -55,7 +56,7 @@ class Game(Env):
             done = True
 
         if done:
-            info = self.build_info_dict()
+            info = self.build_info_list()
         return self.observation(), self.timesteps ** 2, done, info
 
     def seed(self, seed=0):
