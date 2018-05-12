@@ -65,7 +65,7 @@ class DistanceObservationGame(Game):
             # Clamp food distance to 0 or 1.
             if food_distance > 0:
                 food_distance = 1
-            obs.append((1 / wall_distance, 1 / tail_distance, food_distance))
+            obs.append((wall_distance, tail_distance, food_distance))
 
         return np.array(obs)
 

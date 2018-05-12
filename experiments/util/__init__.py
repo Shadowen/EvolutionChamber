@@ -2,12 +2,12 @@ import os
 
 import __main__ as main
 
-DATA_DIR = '/home/wesley/data/evolution_chamber'
+BASE_DATA_DIR = '/home/wesley/data/evolution_chamber'
 
 
 def get_or_make_data_dir():
     """Gets or creates a data path for the given experiment name."""
-    data_dir = os.path.join(DATA_DIR, os.path.basename(main.__file__))
+    data_dir = os.path.join(BASE_DATA_DIR, os.path.basename(main.__file__))
     os.makedirs(data_dir, exist_ok=True)
     return data_dir
 

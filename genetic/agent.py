@@ -1,5 +1,5 @@
 import itertools
-from typing import Tuple, Callable
+from typing import Tuple, Callable, List
 
 import gym
 import numpy as np
@@ -18,7 +18,7 @@ class Agent:
 
         self.get_action, self.genome = build_agent(self.env.observation_space, self.env.action_space)
 
-    def run_iteration(self) -> float:
+    def run_iteration(self) -> Tuple[float, List]:
         obs = self.env.reset()
         done = False
         while not done:

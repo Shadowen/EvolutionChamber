@@ -77,10 +77,8 @@ class Game(Env):
         self.snake_position += self.snake_direction
 
         # Eat food.
-        food_eaten = 0
         if np.all(self.snake_position == self.food_position):
             self.food_position = self._get_free_position()
-            food_eaten = 1
             self.snake_length += 1
 
         collision = False

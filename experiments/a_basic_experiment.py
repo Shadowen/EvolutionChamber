@@ -43,13 +43,14 @@ class ExperimentRunner(Runner):
             steps = 100
             f_historical = deque(maxlen=10)
 
-            for s in range(steps):
+            for s in range(1, steps + 1):
                 start_time = time()
                 f = r.single_iteration()
                 end_time = time()
                 f_historical.append(sum(f) / len(f))
                 print(f"Generation {s} \t"
-                      f"Fitness: {f_historical[-1]} (moving avg. {sum(f_historical) / len(f_historical)}) "
+                      f"Fitness: {f_historical[-1]} (moving avg. {sum(f_historical) / len(f_historical)})\t"
+                      f"Best: {max(f)}\t"
                       f"in {end_time-start_time} s")
 
 
@@ -65,7 +66,7 @@ class FitnessWrapper(gym.RewardWrapper):
     def reward(self, reward):
         snake_length = len(self.env.snake_tail)
         if snake_length < 10:
-            return self.env.num_steps ** 2 * 2 ** snake_length
+            return self.env.num_steps ** 2 * 2 ** (snake_length - 2)
         else:
             return self.env.num_steps ** 2 * 2 ** 10 * (snake_length - 9)
 

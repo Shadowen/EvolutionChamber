@@ -12,8 +12,8 @@ class ExperimentRunner(b_sequence_repeater.ExperimentRunner):
     @staticmethod
     def build_agent(observation_space: gym.Space, action_space: gym.Space) -> \
             Tuple[Callable[[Genome, np.ndarray], np.ndarray], Genome]:
-        weights = [np.random.uniform(-1, 1, size=[np.product(observation_space.n) + 1, 5]),
-                   np.random.uniform(-1, 1, size=[5 + 1, action_space.n])]
+        weights = [np.random.uniform(-1, 1, size=[np.product(observation_space.n) + 1, 10]),
+                   np.random.uniform(-1, 1, size=[10 + 1, action_space.n])]
 
         def _get_action(genome: Genome, ob: np.ndarray) -> np.ndarray:
             ob_reshaped = ob.reshape([1, np.product(ob.shape)])

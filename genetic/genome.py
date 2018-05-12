@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import List
 
 import numpy as np
@@ -6,19 +7,6 @@ import numpy as np
 class Genome:
     def __init__(self, values: List[np.ndarray]):
         self.values = values
-
-    def mutate(self, p: float) -> 'Genome':
-        """
-        Mutates a Genome in place.
-        :param p: probability of point mutation.
-        :returns: self for chaining.
-        """
-
-        for i in range(len(self.values)):
-            mask = np.random.choice([1, 0], size=self.values[i].shape, p=[p, 1 - p])
-            mutations = np.clip(np.random.standard_normal(size=self.values[i].shape) / 5, -1, 1)
-            self.values[i] = mask * self.values[i] + (1 - mask) * mutations
-        return self
 
     @classmethod
     def crossover(cls, a: 'Genome', b: 'Genome') -> 'Genome':
@@ -54,3 +42,19 @@ class Genome:
 
         # Assemble the full Genome from the new weights.
         return Genome(c)
+
+    def mutate(self, p: float) -> 'Genome':
+        """
+        Mutates a Genome in place.
+        :param p: probability of point mutation.
+        :returns: self for chaining.
+        """
+
+        for i in range(len(self.values)):
+            mask = np.random.choice([1, 0], size=self.values[i].shape, p=[p, 1 - p])
+            mutations = np.clip(np.random.standard_normal(size=self.values[i].shape) / 5, -1, 1)
+            self.values[i] = (1 - mask) * self.values[i] + mask * mutations
+        return self
+
+    def __deepcopy__(self, memodict={}):
+        return Genome(deepcopy(self.values))

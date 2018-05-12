@@ -28,6 +28,8 @@ class Runner:
         self.agents = [
             Agent(env=self.game_constructor(), build_agent=self.build_agent) for _ in
             range(num_agents)]
+        # self.agents[0].env = gym.wrappers.Monitor(self.agents[0].env, directory=experiments.util.get_or_make_data_dir(),
+        #                                           video_callable=lambda e: True, force=True)
         self.envType = self.agents[0].env
 
         self.generation = 0

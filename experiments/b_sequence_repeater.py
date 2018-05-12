@@ -33,15 +33,16 @@ class ExperimentRunner(Runner):
 
         with open(get_empty_data_file('data.csv'), 'w') as f:
             r = ExperimentRunner(num_agents=200, num_champions=20, info_file=f, max_workers=16)
-            steps = 100
+            steps = 250
             f_historical = deque(maxlen=5)
-            for s in range(steps):
+            for s in range(1, steps + 1):
                 start_time = time()
                 f = r.single_iteration()
                 end_time = time()
                 f_historical.append(sum(f) / len(f))
                 print(f"Generation {s} \t"
-                      f"Fitness: {f_historical[-1]} (moving avg. {sum(f_historical) / len(f_historical)}) "
+                      f"Fitness: {f_historical[-1]} (moving avg. {sum(f_historical) / len(f_historical)})\t"
+                      f"Best: {max(f)}\t"
                       f"in {end_time-start_time} s")
 
 
