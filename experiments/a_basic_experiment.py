@@ -7,6 +7,7 @@ import numpy as np
 
 from genetic import Genome
 from genetic import Runner
+from gym_util.forwarding_wrappers import ForwardingRewardWrapper
 from numpy_util import sigmoid, cat_ones
 from snake import Game, DistanceObservationGame, Direction
 
@@ -55,7 +56,7 @@ class ExperimentRunner(Runner):
                       f"in {end_time-start_time} s")
 
 
-class FitnessWrapper(gym.RewardWrapper):
+class FitnessWrapper(ForwardingRewardWrapper):
     def __init__(self, env: Game):
         super(FitnessWrapper, self).__init__(env)
         self.env = env
@@ -68,9 +69,9 @@ class FitnessWrapper(gym.RewardWrapper):
     def reward(self, reward):
         snake_length = len(self.env.snake_tail)
         if snake_length < 10:
-            return self.env.num_steps ** 2 * 2 ** (snake_length - 2)
+            return self.env.timesteps ** 2 * 2 ** (snake_length - 2)
         else:
-            return self.env.num_steps ** 2 * 2 ** 10 * (snake_length - 9)
+            return self.env.timesteps ** 2 * 2 ** 10 * (snake_length - 9)
 
 
 if __name__ == '__main__':

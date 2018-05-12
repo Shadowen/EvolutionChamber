@@ -25,7 +25,7 @@ class Game(Env):
         self.observation_space = spaces.Box(low=np.array([0, 0] * 3), high=np.array(self.map_size.tolist() * 3),
                                             dtype=np.float32)
 
-        self.num_steps = None
+        self.timesteps = None
 
         # Snake.
         self.snake_position: np.ndarray = None
@@ -48,7 +48,7 @@ class Game(Env):
         return len(self.snake_tail)
 
     def reset(self):
-        self.num_steps = 0
+        self.timesteps = 0
 
         self.snake_position = np.array(self.map_size / 2, dtype=int)
         self.snake_direction = np.array(list(Direction)[np.random.randint(0, len(Direction))].value)
@@ -62,10 +62,10 @@ class Game(Env):
     info_fields = ['timesteps', 'snake_length']
 
     def create_info_list(self):
-        return [self.num_steps, len(self.snake_tail)]
+        return [self.timesteps, len(self.snake_tail)]
 
     def step(self, action: Direction):
-        self.num_steps += 1
+        self.timesteps += 1
         self.snake_direction = np.array(action.value)
 
         # Update tail.
