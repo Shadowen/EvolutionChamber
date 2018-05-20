@@ -1,1 +1,1 @@
-from . import max_timesteps_wrapper
+from .max_timesteps_wrapper import MaxTimestepsWrapper

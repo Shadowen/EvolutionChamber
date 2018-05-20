@@ -28,7 +28,7 @@ class ExperimentRunner(Runner):
         return _get_action, Genome(weights)
 
     @classmethod
-    def run(cls):
+    def run_experiment(cls):
         from experiments.util import get_empty_data_file
 
         with open(get_empty_data_file('data.csv'), 'w') as f:
@@ -48,4 +48,4 @@ class ExperimentRunner(Runner):
 
 
 if __name__ == '__main__':
-    ExperimentRunner.run()
+    ExperimentRunner.run_experiment()

@@ -1,7 +1,7 @@
 import csv
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
-from typing import Iterable, Dict, Any
+from typing import Iterable, Dict, Any, List
 
 import gym
 import numpy as np
@@ -60,7 +60,7 @@ class Runner:
         new_genomes = [current_genomes[i] for i in champion_indices]
         # Breed remaining population weighted by fitness.
         d = Distribution(fitnesses, current_genomes)
-        for i in population_indices:
+        for _ in population_indices:
             a, b = d.sample(n=2)
             new_genomes.append(Genome.crossover(a, b).mutate(p=0.01))
         # Assign Genomes to Agents.
@@ -75,7 +75,7 @@ class Runner:
                 d[k] = [i[a] for i in info]
             self.info_file_writer.writerow(d)
 
-    def single_iteration(self):
+    def single_iteration(self) -> List[float]:
         """
         Run one iteration of GA and return the fitnesses of the population.
         :returns a list of the fitnesses of the agents currently in this population.
@@ -89,5 +89,5 @@ class Runner:
 
     @classmethod
     @abstractmethod
-    def run_experiment(cls):
+    def run_experiment(cls) -> None:
         raise NotImplementedError()

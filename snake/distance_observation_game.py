@@ -65,13 +65,12 @@ class DistanceObservationGame(Game):
             # Clamp food distance to 0 or 1.
             if food_distance > 0:
                 food_distance = 1
-            obs.append((wall_distance, tail_distance, food_distance))
+            obs.append((1 / wall_distance, 1 / tail_distance, food_distance))
 
         return np.array(obs)
 
 
 if __name__ == '__main__':
-    from snake import Game
     from snake.play_human import play
 
     env = DistanceObservationGame(map_size=[10, 10])

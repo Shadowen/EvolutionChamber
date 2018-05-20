@@ -5,6 +5,7 @@ from typing import Tuple, Callable
 import gym
 import numpy as np
 
+from experiments.util import get_empty_data_file
 from genetic import Genome
 from genetic import Runner
 from gym_util.forwarding_wrappers import ForwardingRewardWrapper
@@ -36,9 +37,7 @@ class ExperimentRunner(Runner):
         return _get_action, Genome(weights)
 
     @classmethod
-    def run(cls):
-        from experiments.util import get_empty_data_file
-
+    def run_experiment(cls):
         with open(get_empty_data_file('data.csv'), 'w') as f:
             r = cls.__new__(cls)
             r.__init__(num_agents=200, num_champions=20, max_workers=1, info_file=f)
@@ -61,7 +60,6 @@ class FitnessWrapper(ForwardingRewardWrapper):
         super(FitnessWrapper, self).__init__(env)
         self.env = env
 
-    # TODO: Replace this with a __missing__ attribute?
     @property
     def info_fields(self):
         return self.env.info_fields
@@ -75,4 +73,4 @@ class FitnessWrapper(ForwardingRewardWrapper):
 
 
 if __name__ == '__main__':
-    ExperimentRunner.run()
+    ExperimentRunner.run_experiment()

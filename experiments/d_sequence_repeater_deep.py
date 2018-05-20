@@ -25,4 +25,4 @@ class ExperimentRunner(b_sequence_repeater.ExperimentRunner):
 
 
 if __name__ == '__main__':
-    ExperimentRunner.run()
+    ExperimentRunner.run_experiment()
