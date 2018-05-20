@@ -34,9 +34,9 @@ class ExperimentRunner(Runner):
         with open(get_empty_data_file('data.csv'), 'w') as f:
             r = cls.__new__(cls)
             r.__init__(num_agents=200, num_champions=2, info_file=f, max_workers=16)
-            steps = 10
+            generations = 10
             f_historical = deque(maxlen=5)
-            for s in range(1, steps + 1):
+            for s in range(1, generations + 1):
                 start_time = time()
                 f = r.single_iteration()
                 end_time = time()

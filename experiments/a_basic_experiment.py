@@ -9,6 +9,7 @@ from experiments.util import get_empty_data_file
 from genetic import Genome
 from genetic import Runner
 from gym_util.forwarding_wrappers import ForwardingRewardWrapper
+from gym_util import MaxTimestepsWrapper
 from numpy_util import sigmoid, cat_ones
 from snake import Game, DistanceObservationGame, Direction
 
@@ -18,6 +19,7 @@ class ExperimentRunner(Runner):
     def game_constructor() -> gym.Env:
         game = DistanceObservationGame(map_size=(30, 30))
         game = FitnessWrapper(game)
+        game = MaxTimestepsWrapper(game, max_timesteps=100)
         return game
 
     @staticmethod
@@ -41,10 +43,10 @@ class ExperimentRunner(Runner):
         with open(get_empty_data_file('data.csv'), 'w') as f:
             r = cls.__new__(cls)
             r.__init__(num_agents=200, num_champions=20, max_workers=1, info_file=f)
-            steps = 100
+            generations = 10
             f_historical = deque(maxlen=10)
 
-            for s in range(1, steps + 1):
+            for s in range(1, generations + 1):
                 start_time = time()
                 f = r.single_iteration()
                 end_time = time()
