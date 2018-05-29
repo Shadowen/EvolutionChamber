@@ -53,7 +53,8 @@ class Game(Env):
         self.timesteps = 0
 
         self.snake_position = np.array(self.map_size / 2, dtype=int)
-        self.snake_direction = np.array(list(Direction)[np.random.randint(0, len(Direction))].value)
+        # self.snake_direction = np.array(list(Direction)[np.random.randint(0, len(Direction))].value)
+        self.snake_direction = np.array(list(Direction)[0].value)
         self.snake_length = self.initial_snake_length
 
         self.snake_tail = deque()
@@ -69,7 +70,9 @@ class Game(Env):
     def step(self, action: Direction):
         self.timesteps += 1
         self.life_left -= 1
-        self.snake_direction = np.array(action.value)
+        action_value = np.array(action.value)
+        if not np.all(-action_value == self.snake_direction):
+            self.snake_direction = action_value
 
         # Update tail.
         self.snake_tail.append(self.snake_position.copy())
@@ -83,7 +86,7 @@ class Game(Env):
         if np.all(self.snake_position == self.food_position):
             self.life_left += 100
             self.food_position = self._get_free_position()
-            # self.snake_length += 1
+            self.snake_length += 1
 
         done = False
         # Collide with self.

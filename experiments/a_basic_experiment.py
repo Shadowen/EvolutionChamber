@@ -16,22 +16,24 @@ from snake import Game, DistanceObservationGame, Direction
 class ExperimentRunner(Runner):
     @staticmethod
     def game_constructor() -> gym.Env:
-        game = DistanceObservationGame(map_size=(30, 30), initial_snake_length=3)
+        game = DistanceObservationGame(map_size=(80, 40), initial_snake_length=3)
         game = FitnessWrapper(game)
         return game
 
     @staticmethod
     def build_agent(observation_space: gym.Space, action_space: gym.Space) -> \
             Tuple[Callable[[Genome, np.ndarray], np.ndarray], Genome]:
-        hidden_nodes = 18  # TODO: Tune this.
-        weights = [np.random.uniform(-1, 1, size=[np.product(observation_space.shape) + 1, hidden_nodes]),
-                   np.random.uniform(-1, 1, size=[hidden_nodes + 1, action_space.n]),
+        hidden_nodes = [18, 18]
+        weights = [np.random.uniform(-1, 1, size=[np.product(observation_space.shape) + 1, hidden_nodes[0]]),
+                   np.random.uniform(-1, 1, size=[hidden_nodes[0] + 1, hidden_nodes[1]]),
+                   np.random.uniform(-1, 1, size=[hidden_nodes[1] + 1, action_space.n]),
                    ]
 
         def _get_action(genome: Genome, ob: np.ndarray) -> np.ndarray:
             ob_reshaped = ob.reshape([1, np.product(ob.shape)])
             h1 = sigmoid(cat_ones(ob_reshaped).dot(genome.values[0]))
-            action_logits = cat_ones(h1).dot(genome.values[1])
+            h2 = sigmoid(cat_ones(h1).dot(genome.values[1]))
+            action_logits = cat_ones(h2).dot(genome.values[2])
             return list(Direction)[np.argmax(action_logits)]
 
         return _get_action, Genome(weights)
@@ -45,7 +47,7 @@ class ExperimentRunner(Runner):
 
         r = cls.__new__(cls)
         r.__init__(num_agents=2000, num_champions=20, max_workers=1, info_file_path=info_path)
-        generations = 12
+        generations = 25
         f_historical = deque(maxlen=10)
 
         for s in range(1, generations + 1):
