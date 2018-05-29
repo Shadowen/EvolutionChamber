@@ -24,6 +24,7 @@ with open(os.path.join(experiments.util.BASE_DATA_DIR, experiment_name, 'data.cs
     q_3 = np.percentile(snake_length, q=75, axis=1)
 
     # Plot
+    plt.plot(generation, m, 'k--')
     plt.plot(generation, q_2, 'k-')
     plt.fill_between(generation, q_1, q_3)
     plt.show()

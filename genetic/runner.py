@@ -21,7 +21,7 @@ class Runner:
     def build_agent(observation_space: gym.Space, action_space: gym.Space):
         raise NotImplementedError()
 
-    def __init__(self, *, num_agents, num_champions, info_file=None, max_workers=1):
+    def __init__(self, *, num_agents: int, num_champions: int, info_file_path: str = None, max_workers: int = 1):
 
         self.num_agents = num_agents
         self.num_champions = num_champions
@@ -35,19 +35,26 @@ class Runner:
         self.generation = 0
 
         self.info_file_writer = None
-        if info_file is not None:
-            self.info_file_writer = csv.DictWriter(info_file, ['generation'] + self.envType.info_fields)
+        if info_file_path is not None:
+            self.info_file = open(info_file_path, 'w', buffering=1)
+            self.info_file_writer = csv.DictWriter(self.info_file, ['generation'] + self.envType.info_fields)
             self.info_file_writer.writeheader()
         self.max_workers = max_workers
 
     def evaluate(self) -> Iterable[Any]:
         if self.max_workers == 1:
-            generator = (a.run_iteration() for a in self.agents)
+            fitnesses = []
+            num_agents = len(self.agents)
+            for i, a in enumerate(self.agents):
+                fitnesses.append(a.run_iteration())
+                print(f"\rEvaluating... {i}/{num_agents} ", end="")
+            print("\r", end="")
+            return zip(*fitnesses)
         else:
             # TODO: See if parallelization actually helps...
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 generator = executor.map(lambda a: a.run_iteration(), self.agents)
-        return zip(*generator)
+            return zip(*generator)
 
     def do_selection(self, fitnesses: Iterable[float]) -> None:
         """Modify the genomes of the agents to create the next generation."""

@@ -33,7 +33,7 @@ class ExperimentRunner(Runner):
 
         with open(get_empty_data_file('data.csv'), 'w') as f:
             r = cls.__new__(cls)
-            r.__init__(num_agents=200, num_champions=2, info_file=f, max_workers=16)
+            r.__init__(num_agents=200, num_champions=2, info_file_path=f, max_workers=16)
             generations = 10
             f_historical = deque(maxlen=5)
             for s in range(1, generations + 1):

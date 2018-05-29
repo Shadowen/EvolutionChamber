@@ -24,6 +24,7 @@ class Game(Env):
 
         self.observation_space = spaces.Box(low=np.array([0, 0] * 3), high=np.array(self.map_size.tolist() * 3),
                                             dtype=np.float32)
+        self.info_fields = ['timesteps', 'snake_length', 'life_left']
 
         self.timesteps = None
 
@@ -32,6 +33,7 @@ class Game(Env):
         self.snake_direction: Direction = None
         self.snake_length: int = None
         self.snake_tail: deque[np.ndarray[int]] = None
+        self.life_left: int = None
 
         # Food.
         self.food_position: np.ndarray[int] = None
@@ -56,16 +58,17 @@ class Game(Env):
 
         self.snake_tail = deque()
 
+        self.life_left = 200
+
         self.food_position = self._get_free_position()
         return self.observation()
 
-    info_fields = ['timesteps', 'snake_length']
-
     def create_info_list(self):
-        return [self.timesteps, len(self.snake_tail)]
+        return [self.timesteps, len(self.snake_tail), self.life_left]
 
     def step(self, action: Direction):
         self.timesteps += 1
+        # self.life_left -= 1
         self.snake_direction = np.array(action.value)
 
         # Update tail.
@@ -78,20 +81,25 @@ class Game(Env):
 
         # Eat food.
         if np.all(self.snake_position == self.food_position):
+            self.life_left += 100
             self.food_position = self._get_free_position()
             self.snake_length += 1
 
-        collision = False
+        done = False
         # Collide with self.
         for t in self.snake_tail:
             if np.all(self.snake_position == t):
-                collision = True
+                done = True
                 break
         # Collide with walls.
         if np.any(self.snake_position < [0, 0]) or np.any(self.snake_position >= self.map_size):
-            collision = True
+            done = True
 
-        return self.observation(), self.reward(), collision, self.create_info_list()
+        # Run out of lifespan.
+        if self.life_left <= 0:
+            done = True
+
+        return self.observation(), self.reward(), done, self.create_info_list()
 
     def _get_free_position(self):
         while True:
