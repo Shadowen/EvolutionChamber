@@ -17,8 +17,8 @@ class Game(Env):
 
     action_space = spaces.Discrete(4)
 
-    def __init__(self, *, map_size: Iterable[int]):
-        self.initial_snake_length: int = 3
+    def __init__(self, *, map_size: Iterable[int], initial_snake_length: int = 3):
+        self.initial_snake_length: int = initial_snake_length
         self.map_size: np.ndarray = np.array(map_size)
         self.render_scale: int = 30
 
@@ -68,7 +68,7 @@ class Game(Env):
 
     def step(self, action: Direction):
         self.timesteps += 1
-        # self.life_left -= 1
+        self.life_left -= 1
         self.snake_direction = np.array(action.value)
 
         # Update tail.
@@ -83,7 +83,7 @@ class Game(Env):
         if np.all(self.snake_position == self.food_position):
             self.life_left += 100
             self.food_position = self._get_free_position()
-            self.snake_length += 1
+            # self.snake_length += 1
 
         done = False
         # Collide with self.

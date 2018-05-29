@@ -50,6 +50,6 @@ def play(env=None):
 
 
 if __name__ == "__main__":
-    from snake import Game
+    from snake import Game, DistanceObservationGame
 
-    play(Game(map_size=[10, 10]))
+    play(DistanceObservationGame(map_size=[10, 10], initial_snake_length=3))

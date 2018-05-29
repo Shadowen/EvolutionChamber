@@ -1,4 +1,5 @@
 import csv
+import os
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import Iterable, Dict, Any, List
@@ -25,9 +26,8 @@ class Runner:
 
         self.num_agents = num_agents
         self.num_champions = num_champions
-        self.agents = [
-            Agent(env=self.game_constructor(), build_agent=self.build_agent) for _ in
-            range(num_agents)]
+        self.agents: List[Agent] = [Agent(env=self.game_constructor(), build_agent=self.build_agent) for _ in
+                                    range(num_agents)]
         # self.agents[0].env = gym.wrappers.Monitor(self.agents[0].env, directory=experiments.util.get_or_make_data_dir(),
         #                                           video_callable=lambda e: True, force=True)
         self.envType = self.agents[0].env
@@ -44,10 +44,9 @@ class Runner:
     def evaluate(self) -> Iterable[Any]:
         if self.max_workers == 1:
             fitnesses = []
-            num_agents = len(self.agents)
             for i, a in enumerate(self.agents):
                 fitnesses.append(a.run_iteration())
-                print(f"\rEvaluating... {i}/{num_agents} ", end="")
+                print(f"\rEvaluating... agent {i+1}/{self.num_agents} ", end="")
             print("\r", end="")
             return zip(*fitnesses)
         else:
@@ -63,13 +62,15 @@ class Runner:
         # Filter out champions.
         argsorted_indices = np.argsort(fitnesses)
         champion_indices = argsorted_indices[-self.num_champions:]
-        population_indices = argsorted_indices[:-self.num_champions]
+        # population_indices = argsorted_indices[:-self.num_champions]
         new_genomes = [current_genomes[i] for i in champion_indices]
         # Breed remaining population weighted by fitness.
         d = Distribution(fitnesses, current_genomes)
-        for _ in population_indices:
+        for i in range(self.num_champions, self.num_agents):
             a, b = d.sample(n=2)
             new_genomes.append(Genome.crossover(a, b).mutate(p=0.01))
+            print(f"\rBreeding... agent {i+1}/{self.num_agents} ", end="")
+        print("\r", end="")
         # Assign Genomes to Agents.
         for a, g in zip(self.agents, new_genomes):
             a.genome = g
@@ -93,6 +94,37 @@ class Runner:
         self.do_selection(fitnesses)
         self.record_info(self.generation, info)
         return fitnesses
+
+    def save_agents(self, *, directory, overwrite=False):
+        """
+        Saves the agents to the specified directory.
+        :param directory: Specify a directory to save to.
+        :param overwrite: If True, deletes any existing saved data in the directory before saving. Default is False.
+        """
+        # If we are overwriting, walk the directory and delete all folders.
+        if overwrite:
+            w = os.walk(directory)
+            w.__next__()
+            for a in w:
+                if os.path.isdir(a[0]):
+                    os.rmdir(a[0])
+
+        # Save the agents.
+        for i, a in enumerate(self.agents):
+            np.savez(os.path.join(directory, str(i)), a.genome.values)
+
+    def load_agents(self, *, directory, method):
+        """
+        Loads agents from a directory.
+        :param directory:
+        :param method: One of ['MATCHING']. Selects the method by which saved genomes are mapped to agents.
+        'MATCHING' - maps each genome to an agent. There must be at least as many genomes as agents.
+        """
+        if method == 'MATCHING':
+            for i, a in enumerate(self.agents):
+                a.genome.values = np.load(os.path.join(directory, str(i) + ".npz"))['arr_0']
+        else:
+            raise NotImplementedError("Invalid method selected.")
 
     @classmethod
     @abstractmethod

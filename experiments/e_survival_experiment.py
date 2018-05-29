@@ -1,6 +1,7 @@
+from experiments import a_basic_experiment
+
 import gym
 
-from experiments import a_basic_experiment
 from gym_util import MaxTimestepsWrapper
 from gym_util.forwarding_wrappers import ForwardingRewardWrapper
 from snake import DistanceObservationGame
@@ -9,9 +10,9 @@ from snake import DistanceObservationGame
 class ExperimentRunner(a_basic_experiment.ExperimentRunner):
     @staticmethod
     def game_constructor() -> gym.Env:
-        game = DistanceObservationGame(map_size=(10, 10))
-        game = MaxTimestepsWrapper(game, max_timesteps=100)
+        game = DistanceObservationGame(map_size=(30, 30))
         game = SurvivalFitnessWrapper(game)
+        game = MaxTimestepsWrapper(game, max_timesteps=10000)
         return game
 
 

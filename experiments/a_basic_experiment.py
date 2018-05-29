@@ -5,10 +5,9 @@ from typing import Tuple, Callable
 import gym
 import numpy as np
 
-from experiments.util import get_empty_data_file
+from experiments.util import *
 from genetic import Genome
 from genetic import Runner
-from gym_util import MaxTimestepsWrapper
 from gym_util.forwarding_wrappers import ForwardingRewardWrapper
 from numpy_util import sigmoid, cat_ones
 from snake import Game, DistanceObservationGame, Direction
@@ -17,9 +16,8 @@ from snake import Game, DistanceObservationGame, Direction
 class ExperimentRunner(Runner):
     @staticmethod
     def game_constructor() -> gym.Env:
-        game = DistanceObservationGame(map_size=(30, 30))
+        game = DistanceObservationGame(map_size=(30, 30), initial_snake_length=3)
         game = FitnessWrapper(game)
-        game = MaxTimestepsWrapper(game, max_timesteps=10000)
         return game
 
     @staticmethod
@@ -40,11 +38,14 @@ class ExperimentRunner(Runner):
 
     @classmethod
     def run_experiment(cls):
-        np.random.seed(12)
+        np.random.seed(1)
+
+        saved_agents_dir = get_or_make_data_dir('agents')
+        info_path = get_empty_data_file('data.csv')
 
         r = cls.__new__(cls)
-        r.__init__(num_agents=200, num_champions=20, max_workers=1, info_file_path=get_empty_data_file('data.csv'))
-        generations = 20
+        r.__init__(num_agents=2000, num_champions=20, max_workers=1, info_file_path=info_path)
+        generations = 12
         f_historical = deque(maxlen=10)
 
         for s in range(1, generations + 1):
@@ -57,6 +58,9 @@ class ExperimentRunner(Runner):
                   f"Best: {max(f)}\t"
                   f"in {end_time-start_time} s")
 
+            # Remove the old agents and save the current ones.
+            r.save_agents(directory=saved_agents_dir, overwrite=True)
+
 
 class FitnessWrapper(ForwardingRewardWrapper):
     def __init__(self, env: Game):
@@ -68,11 +72,11 @@ class FitnessWrapper(ForwardingRewardWrapper):
         return self.env.info_fields
 
     def reward(self, reward):
-        snake_length = len(self.env.snake_tail)
+        snake_length = len(self.env.snake_tail) + 1
         if snake_length < 10:
             return (self.env.timesteps ** 2) * (2 ** snake_length)
         else:
-            return (self.env.timesteps ** 2) * (2 ** 10) * (snake_length - 7)
+            return (self.env.timesteps ** 2) * (2 ** 10) * (snake_length - 9)
 
 
 if __name__ == '__main__':
