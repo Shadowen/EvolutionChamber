@@ -1,25 +1,25 @@
-from typing import Tuple, Callable, List
+from abc import abstractmethod
+from typing import Tuple, List
 
 import gym
-import numpy as np
 
 from genetic.genome import Genome
 
 
 class Agent:
-    def __init__(self, *,
-                 env: gym.Env,
-                 build_agent: Callable[
-                     [gym.Space, gym.Space], Tuple[Callable[[Genome, np.ndarray], np.ndarray], Genome]]):
+    def __init__(self, *, env: gym.Env, genome: Genome):
         self.env = env
+        self.genome: Genome = genome
 
-        self.get_action, self.genome = build_agent(self.env.observation_space, self.env.action_space)
+    @abstractmethod
+    def get_action(self, obs):
+        pass
 
     def run_iteration(self, *, render: bool = False) -> Tuple[float, List]:
         obs = self.env.reset()
         done = False
         while not done:
-            action = self.get_action(self.genome, obs)
+            action = self.get_action(obs)
             obs, reward, done, info = self.env.step(action)
             if render:
                 self.env.render(mode='human')

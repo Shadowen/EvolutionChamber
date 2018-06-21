@@ -2,10 +2,9 @@ import csv
 import json
 import os
 from abc import abstractmethod
-from concurrent.futures import ThreadPoolExecutor
-from typing import Iterable, Dict, Any, List
+from multiprocessing import Pool
+from typing import Iterable, Callable, Dict, Any, List
 
-import gym
 import numpy as np
 
 from genetic import Agent, Genome
@@ -19,20 +18,12 @@ class Runner:
     def game_constructor() -> Game:
         raise NotImplementedError()
 
-    @staticmethod
-    @abstractmethod
-    def build_agent(observation_space: gym.Space, action_space: gym.Space):
-        raise NotImplementedError()
-
-    def __init__(self, *, num_agents: int, num_champions: int, info_file_path: str = None, max_workers: int = 1):
-
+    def __init__(self, *, agent_builder: Callable[[], Agent], num_agents: int, num_champions: int,
+                 info_file_path: str = None, max_workers: int = 1):
         self.num_agents: int = num_agents
         self.num_champions: int = num_champions
-        self.agents: List[Agent] = [Agent(env=self.game_constructor(), build_agent=self.build_agent) for _ in
-                                    range(num_agents)]
+        self.agents: List[Agent] = [agent_builder() for _ in range(num_agents)]
         self.fitnesses: List[float] = None
-        # self.agents[0].env = gym.wrappers.Monitor(self.agents[0].env, directory=experiments.util.get_or_make_data_dir(),
-        #                                           video_callable=lambda e: True, force=True)
         self.envType: Game = self.agents[0].env
 
         self.generation: int = 0
@@ -53,8 +44,10 @@ class Runner:
             print("\r", end="")
         else:
             # TODO: See if parallelization actually helps...
-            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                outputs = executor.map(lambda a: a.run_iteration(), self.agents)
+            with Pool(processes=self.max_workers) as executor:
+                responses = [executor.apply_async(a.run_iteration) for a in self.agents]
+                outputs = [r.get() for r in responses]
+                # outputs = executor.map(lambda a: a.run_iteration(), self.agents)
         self.fitnesses, infos = zip(*outputs)
         return self.fitnesses, infos
 
@@ -65,7 +58,6 @@ class Runner:
         # Filter out champions.
         argsorted_indices = np.argsort(fitnesses)
         champion_indices = argsorted_indices[-self.num_champions:]
-        # population_indices = argsorted_indices[:-self.num_champions]
         new_genomes = [current_genomes[i] for i in champion_indices]
         # Breed remaining population weighted by fitness.
         d = Distribution(fitnesses, current_genomes)

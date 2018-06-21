@@ -1,55 +1,34 @@
-import copy
-import threading
 from collections import deque
 from time import time
-from typing import Tuple, Callable
 
-import gym
 import numpy as np
 
 from experiments.util import *
-from genetic import Agent
-from genetic import Genome
 from genetic import Runner
 from gym_util.forwarding_wrappers import ForwardingRewardWrapper
-from numpy_util import sigmoid, cat_ones
-from snake import Game, DistanceObservationGame, Direction
+from snake import Game, DistanceObservationGame, SnakeAgent
 
 
 class ExperimentRunner(Runner):
     @staticmethod
-    def game_constructor() -> gym.Env:
+    def game_constructor() -> Game:
         game = DistanceObservationGame(map_size=(80, 40), initial_snake_length=3)
         game = FitnessWrapper(game)
         return game
 
     @staticmethod
-    def build_agent(observation_space: gym.Space, action_space: gym.Space) -> \
-            Tuple[Callable[[Genome, np.ndarray], np.ndarray], Genome]:
-        hidden_nodes = [18, 18]
-        weights = [np.random.uniform(-1, 1, size=[np.product(observation_space.shape) + 1, hidden_nodes[0]]),
-                   np.random.uniform(-1, 1, size=[hidden_nodes[0] + 1, hidden_nodes[1]]),
-                   np.random.uniform(-1, 1, size=[hidden_nodes[1] + 1, action_space.n]),
-                   ]
-
-        def _get_action(genome: Genome, ob: np.ndarray) -> np.ndarray:
-            ob_reshaped = ob.reshape([1, np.product(ob.shape)])
-            h1 = sigmoid(cat_ones(ob_reshaped).dot(genome.values[0]))
-            h2 = sigmoid(cat_ones(h1).dot(genome.values[1]))
-            action_logits = cat_ones(h2).dot(genome.values[2])
-            return list(Direction)[np.argmax(action_logits)]
-
-        return _get_action, Genome(weights)
+    def build_agent():
+        return SnakeAgent(env=ExperimentRunner.game_constructor())
 
     @classmethod
     def run_experiment(cls):
         np.random.seed(1)
-
         saved_agents_dir = get_or_make_data_dir('agents')
         info_path = get_empty_data_file('data.csv')
 
         r = cls.__new__(cls)
-        r.__init__(num_agents=2000, num_champions=20, max_workers=1, info_file_path=info_path)
+        r.__init__(agent_builder=ExperimentRunner.build_agent, num_agents=2000, num_champions=20, max_workers=4,
+                   info_file_path=info_path)
         generations = 100
         f_historical = deque(maxlen=10)
 
