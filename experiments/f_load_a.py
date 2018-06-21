@@ -18,7 +18,7 @@ class ExperimentRunner(a_basic_experiment.ExperimentRunner):
         r.load_agents(directory="/home/wesley/data/evolution_chamber/a_basic_experiment (save).py/agents/",
                       method='MATCHING')
 
-        generations = 10
+        generations = 20
         f_historical = deque(maxlen=10)
 
         for s in range(1, generations + 1):

@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 import experiments.util
 
-experiment_name = 'a_basic_experiment.py'
+experiment_name = 'i_load_g.py'
 with open(os.path.join(experiments.util.BASE_DATA_DIR, experiment_name, 'data.csv'), 'r') as f:
     generation = []
     snake_length = []

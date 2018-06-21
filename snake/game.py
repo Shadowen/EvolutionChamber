@@ -11,7 +11,7 @@ from snake.direction import Direction
 class Game(Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
-        'video.frames_per_second': 4
+        'video.frames_per_second': 60
     }
     reward_range = (0, np.inf)
 
@@ -20,7 +20,7 @@ class Game(Env):
     def __init__(self, *, map_size: Iterable[int], initial_snake_length: int = 3):
         self.initial_snake_length: int = initial_snake_length
         self.map_size: np.ndarray = np.array(map_size)
-        self.render_scale: int = 30
+        self.render_scale: int = 10
 
         self.observation_space = spaces.Box(low=np.array([0, 0] * 3), high=np.array(self.map_size.tolist() * 3),
                                             dtype=np.float32)
@@ -39,6 +39,7 @@ class Game(Env):
         self.food_position: np.ndarray[int] = None
 
         # Rendering.
+        self.pygame_clock: pygame.time.Clock = None
         self.window: pygame.SurfaceType = None
 
     def observation(self):
@@ -53,8 +54,7 @@ class Game(Env):
         self.timesteps = 0
 
         self.snake_position = np.array(self.map_size / 2, dtype=int)
-        # self.snake_direction = np.array(list(Direction)[np.random.randint(0, len(Direction))].value)
-        self.snake_direction = np.array(list(Direction)[0].value)
+        self.snake_direction = np.array(list(Direction)[np.random.randint(0, len(Direction))].value)
         self.snake_length = self.initial_snake_length
 
         self.snake_tail = deque()
@@ -121,6 +121,7 @@ class Game(Env):
     def render(self, mode='human'):
         if mode == 'human':
             if self.window is None:
+                self.pygame_clock = pygame.time.Clock()
                 self.window = pygame.display.set_mode(self.map_size * self.render_scale, pygame.SRCALPHA)
                 pygame.display.set_caption("Snake")
             self.window.fill((255, 255, 255))
@@ -141,6 +142,7 @@ class Game(Env):
             self.window.blit(s, [0, 0])
 
             pygame.display.flip()
+            self.pygame_clock.tick(self.metadata['video.frames_per_second'])
         elif mode == 'rgb_array':
             world = np.zeros(self.map_size.tolist() + [3])
             for t in self.snake_tail:
