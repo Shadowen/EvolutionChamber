@@ -1,12 +1,13 @@
 import gym
 import numpy as np
 
-from genetic import Agent, Genome
+import genetic
+from genetic import Genome
 from numpy_util import sigmoid, cat_ones
 from snake import Game, Direction
 
 
-class SnakeAgent(Agent):
+class Agent(genetic.Agent):
     def __init__(self, *, env: Game):
         super().__init__(env=env, genome=self._init_genome(env.observation_space, env.action_space))
 

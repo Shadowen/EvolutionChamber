@@ -3,22 +3,20 @@ from time import time
 
 import numpy as np
 
+import snake
 from experiments.util import *
 from genetic import Runner
 from gym_util.forwarding_wrappers import ForwardingRewardWrapper
-from snake import Game, DistanceObservationGame, SnakeAgent
+from snake import Game, DistanceObservationGame
 
 
 class ExperimentRunner(Runner):
-    @staticmethod
-    def game_constructor() -> Game:
-        game = DistanceObservationGame(map_size=(80, 40), initial_snake_length=3)
-        game = FitnessWrapper(game)
-        return game
 
     @staticmethod
     def build_agent():
-        return SnakeAgent(env=ExperimentRunner.game_constructor())
+        game = DistanceObservationGame(map_size=(80, 40), initial_snake_length=3)
+        game = FitnessWrapper(game)
+        return snake.Agent(env=game)
 
     @classmethod
     def run_experiment(cls):
@@ -27,7 +25,7 @@ class ExperimentRunner(Runner):
         info_path = get_empty_data_file('data.csv')
 
         r = cls.__new__(cls)
-        r.__init__(agent_builder=ExperimentRunner.build_agent, num_agents=2000, num_champions=20, max_workers=4,
+        r.__init__(agent_builder=ExperimentRunner.build_agent, num_agents=2000, num_champions=20, max_workers=8,
                    info_file_path=info_path)
         generations = 100
         f_historical = deque(maxlen=10)
