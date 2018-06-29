@@ -29,7 +29,7 @@ class ExperimentRunner(Runner):
             end_time = time()
             avg_fitness = sum(f) / len(f)
             print(f"Generation {s} \t"
-                  f"Fitness: {avg_fitness})\t"
+                  f"Fitness: {avg_fitness}\t"
                   f"Best: {max(f)}\t"
                   f"in {end_time-start_time} s")
             # Record info to log.

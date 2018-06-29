@@ -3,16 +3,15 @@ from time import time
 import numpy as np
 
 import snake
+from experiments import a_basic_experiment
 from experiments.util import *
-from genetic import Runner
 from snake import DistanceObservationGame
 
 
-class ExperimentRunner(Runner):
-
+class ExperimentRunner(a_basic_experiment.ExperimentRunner):
     @staticmethod
     def build_agent():
-        game = DistanceObservationGame(map_size=(80, 40), initial_snake_length=3)
+        game = Game(map_size=(20, 20))
         return snake.Agent(env=game, hidden_nodes=[18, 18])
 
     @classmethod
@@ -26,27 +25,9 @@ class ExperimentRunner(Runner):
         r = cls.__new__(cls)
         r.__init__(agent_builder=cls.build_agent, num_agents=2000, num_champions=20, max_workers=8,
                    info_file_path=info_path)
+        r.load_agents(directory="/home/wesley/data/evolution_chamber/e_survival_experiment.py/agents/",
+                      method='MATCHING')
         generations = 100
-
-        human_display = False
-        if human_display:
-            import copy
-            import threading
-            from genetic import Agent, Genome
-
-            human_display_agent: Agent = cls.build_agent()
-            best_genome: Genome = human_display_agent.genome
-            best_genome_lock: threading.Lock = threading.Lock()
-
-            def do_human_display():
-                # Rendering...
-                while human_display_agent.genome is not None:
-                    with best_genome_lock:
-                        human_display_agent.genome = best_genome
-                    human_display_agent.run_iteration(render=True)
-
-            human_display_thread = threading.Thread(target=do_human_display)
-            human_display_thread.start()
 
         for s in range(1, generations + 1):
             start_time = time()
@@ -57,9 +38,6 @@ class ExperimentRunner(Runner):
                   f"Fitness: {avg_fitness}\t"
                   f"Best: {max(f)}\t"
                   f"in {end_time-start_time} s")
-            if human_display:
-                with best_genome_lock:
-                    best_genome = copy.deepcopy(r.agents[np.argmax(f)].genome)
 
             # Record info to log.
             r.record_info()
@@ -69,9 +47,22 @@ class ExperimentRunner(Runner):
             # Breed next generation.
             r.breed_next_generation()
 
-        # Wait for threads to terminate.
-        if human_display:
-            human_display_thread.join()
+
+class Game(DistanceObservationGame):
+    timestep_elbow = 30
+    length_elbow = 5
+
+    def reward(self, reward=0):
+        snake_length = self.snake_length + 1 - 4
+        if self.timesteps <= self.timestep_elbow:
+            r1 = self.timesteps ** 2
+        else:
+            r1 = (self.timestep_elbow ** 2) + (self.timesteps - self.timestep_elbow)
+        if snake_length <= self.length_elbow:
+            r2 = 3 ** snake_length
+        else:
+            r2 = (3 ** self.length_elbow) * (snake_length - self.length_elbow)
+        return r1 * r2
 
 
 if __name__ == '__main__':

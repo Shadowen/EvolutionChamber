@@ -1,17 +1,18 @@
-from gym_util.forwarding_wrappers import ForwardingWrapper
+from gym import Wrapper
 
 
-class MaxTimestepsWrapper(ForwardingWrapper):
-    def __init__(self, env, *, max_timesteps:int):
+class MaxTimestepsWrapper(Wrapper):
+    def __init__(self, env, *, max_timesteps: int):
         super().__init__(env)
-        self.info_fields = env.info_fields + ['reached_max_timesteps']
+        self.timesteps = 0
         self.max_timesteps = max_timesteps
 
+    def reset(self, **kwargs):
+        return self.env.reset(**kwargs)
+
     def step(self, action):
-        ob, reward, done, info = super().step(action)
+        ob, reward, done, info = self.env.step(action)
+        self.timesteps += 1
         if self.timesteps > self.max_timesteps:
-            info.append(True)
             done = True
-        else:
-            info.append(False)
         return ob, reward, done, info

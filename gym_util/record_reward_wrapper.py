@@ -1,9 +1,8 @@
 import gym
+from gym import RewardWrapper
 
-from gym_util.forwarding_wrappers import ForwardingRewardWrapper
 
-
-class RecordRewardWrapper(ForwardingRewardWrapper):
+class RecordRewardWrapper(RewardWrapper):
     def __init__(self, env: gym.Env):
         super().__init__(env)
         self.env.info_fields = env.info_fields + ['fitness']

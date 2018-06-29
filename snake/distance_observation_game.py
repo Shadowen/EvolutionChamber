@@ -8,7 +8,7 @@ from snake import Game
 
 class DistanceObservationGame(Game):
     def __init__(self, *args, **kwargs):
-        super(DistanceObservationGame, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.max_distance = np.sqrt(np.sum(self.map_size ** 2))
         self.observation_space = spaces.Box(low=0, high=self.max_distance, shape=[8, 3],
                                             dtype=np.float32)
@@ -60,15 +60,21 @@ class DistanceObservationGame(Game):
                         break
 
             # If tail is not present, assume max_distance.
-            if tail_distance == 0:
-                tail_distance = self.max_distance
+            if tail_distance != 0:
+                tail_distance = 1 / tail_distance
             # Clamp food distance to 0 or 1.
             if food_distance > 0:
                 food_distance = 1
-            obs.append((1 / wall_distance, 1 / tail_distance, food_distance))
+            obs.append((1 / wall_distance, tail_distance, food_distance))
 
         return np.array(obs)
 
+    def reward(self, reward=0):
+        snake_length = self.snake_length + 1
+        if snake_length < 10:
+            return (self.timesteps ** 2) * (2 ** snake_length)
+        else:
+            return (self.timesteps ** 2) * (2 ** 10) * (snake_length - 9)
 
 if __name__ == '__main__':
     from snake.play_human import play

@@ -13,7 +13,7 @@ pygame.init()
 class Game(Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
-        'video.frames_per_second': 30
+        'video.frames_per_second': 60
     }
     reward_range = (0, np.inf)
 
@@ -90,7 +90,7 @@ class Game(Env):
         if np.all(self.snake_position == self.food_position):
             self.life_left += 100
             self.food_position = self._get_free_position()
-            self.snake_length += 1
+            self.snake_length += 4 if self.snake_length<=10 else 1
 
         done = False
         # Collide with self.
