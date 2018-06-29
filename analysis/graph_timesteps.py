@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 import experiments.util
 
-experiment_name = 'i_load_g.py'
+experiment_name = 'g_smaller_room.py'
 with open(os.path.join(experiments.util.BASE_DATA_DIR, experiment_name, 'data.csv'), 'r') as f:
     generation = []
     timestep = []
@@ -19,9 +19,9 @@ with open(os.path.join(experiments.util.BASE_DATA_DIR, experiment_name, 'data.cs
 
     # Do some calculations.
     # mean = np.mean(timestep, axis=1)
-    q_1 = np.percentile(timestep, q=25, axis=1)
-    q_2 = np.percentile(timestep, q=50, axis=1)
-    q_3 = np.percentile(timestep, q=75, axis=1)
+    q_1 = np.percentile(timestep, q=50, axis=1)
+    q_2 = np.percentile(timestep, q=75, axis=1)
+    q_3 = np.percentile(timestep, q=95, axis=1)
     min = np.min(timestep, axis=1)
     max = np.max(timestep, axis=1)
 
