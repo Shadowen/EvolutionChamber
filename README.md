@@ -1,9 +1,9 @@
 # EvolutionChamber
-
 <div>
-<img title="Evolution Chamber" src="EvolutionChamber.JPG">
-
-> Genetic Algorithms applied to Snake.
+    <img title="Evolution Chamber" src="EvolutionChamber.JPG" style="max-width: 25%; vertical-align: middle;">
+    <div style="display: inline-block;">
+        <blockquote style="display: inline-block;">Genetic Algorithms applied to Snake.</blockquote>
+    </div>
 </div>
 
 ## Experiments
