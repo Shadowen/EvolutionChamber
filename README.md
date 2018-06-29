@@ -1,8 +1,10 @@
 # EvolutionChamber
 
-<img title="Evolution Chamber" src="./EvolutionChamber.JPG" align="right">
+<div>
+<img title="Evolution Chamber" src="EvolutionChamber.JPG">
 
 > Genetic Algorithms applied to Snake.
+</div>
 
 ## Experiments
 Experiments are indexed a-z, in order of date of creation. Files are contained in `experiments/[a-z]_[description]`.
