@@ -3,7 +3,7 @@ import json
 import os
 from abc import abstractmethod
 from multiprocessing import Pool
-from typing import Iterable, Callable, Dict, Any, List
+from typing import Iterable, Callable, Any, List, Tuple
 
 import numpy as np
 
@@ -13,17 +13,13 @@ from snake import Game
 
 
 class Runner:
-    @staticmethod
-    @abstractmethod
-    def game_constructor() -> Game:
-        raise NotImplementedError()
-
     def __init__(self, *, agent_builder: Callable[[], Agent], num_agents: int, num_champions: int,
                  info_file_path: str = None, max_workers: int = 1):
         self.num_agents: int = num_agents
         self.num_champions: int = num_champions
         self.agents: List[Agent] = [agent_builder() for _ in range(num_agents)]
         self.fitnesses: List[float] = None
+        self.infos: List[Tuple[Any]] = None
         self.envType: Game = self.agents[0].env
 
         self.generation: int = 0
@@ -35,32 +31,35 @@ class Runner:
             self.info_file_writer.writeheader()
         self.max_workers = max_workers
 
-    def evaluate(self) -> Iterable[Any]:
+    def evaluate(self) -> Tuple[Iterable[float], Iterable[Tuple[Any]]]:
         if self.max_workers == 1:
+            # Sequential execution.
             outputs = []
             for i, a in enumerate(self.agents):
                 outputs.append(a.run_iteration())
                 print(f"\rEvaluating... agent {i+1}/{self.num_agents} ", end="")
             print("\r", end="")
         else:
-            # TODO: See if parallelization actually helps...
+            # Use a process pool to spread out execution.
             with Pool(processes=self.max_workers) as executor:
                 responses = [executor.apply_async(a.run_iteration) for a in self.agents]
                 outputs = [r.get() for r in responses]
-                # outputs = executor.map(lambda a: a.run_iteration(), self.agents)
-        self.fitnesses, infos = zip(*outputs)
-        return self.fitnesses, infos
 
-    def do_selection(self, fitnesses: Iterable[float]) -> None:
+        self.fitnesses, self.infos = zip(*outputs)
+        return self.fitnesses, self.infos
+
+    def breed_next_generation(self) -> None:
         """Modify the genomes of the agents to create the next generation."""
+        self.generation += 1
+
         # Crossover and mutation.
         current_genomes = [a.genome for a in self.agents]
         # Filter out champions.
-        argsorted_indices = np.argsort(fitnesses)
+        argsorted_indices = np.argsort(self.fitnesses)
         champion_indices = argsorted_indices[-self.num_champions:]
         new_genomes = [current_genomes[i] for i in champion_indices]
         # Breed remaining population weighted by fitness.
-        d = Distribution(fitnesses, current_genomes)
+        d = Distribution(self.fitnesses, current_genomes)
         for i in range(self.num_champions, self.num_agents):
             a, b = d.sample(n=2)
             new_genomes.append(Genome.crossover(a, b).mutate(p=0.01))
@@ -70,25 +69,13 @@ class Runner:
         for a, g in zip(self.agents, new_genomes):
             a.genome = g
 
-    def record_info(self, generation: int, info: Dict) -> None:
+    def record_info(self) -> None:
         """Record the given info dict to disk."""
         if self.info_file_writer is not None:
-            d = {'generation': generation}
+            d = {'generation': self.generation}
             for a, k in enumerate(self.envType.info_fields):
-                d[k] = [i[a] for i in info]
+                d[k] = [i[a] for i in self.infos]
             self.info_file_writer.writerow(d)
-
-    def single_iteration(self) -> List[float]:
-        """
-        Run one iteration of GA and return the fitnesses of the population.
-        :returns a list of the fitnesses of the agents currently in this population.
-        """
-        self.generation += 1
-
-        fitnesses, info = self.evaluate()
-        self.do_selection(fitnesses)
-        self.record_info(self.generation, info)
-        return fitnesses
 
     def save_agents(self, *, directory, overwrite=False):
         """

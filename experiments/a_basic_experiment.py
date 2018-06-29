@@ -1,5 +1,3 @@
-import functools
-from collections import deque
 from time import time
 
 import numpy as np
@@ -8,6 +6,7 @@ import snake
 from experiments.util import *
 from genetic import Runner
 from gym_util.forwarding_wrappers import ForwardingRewardWrapper
+from gym_util import RecordRewardWrapper
 from snake import Game, DistanceObservationGame
 
 
@@ -17,7 +16,8 @@ class ExperimentRunner(Runner):
     def build_agent():
         game = DistanceObservationGame(map_size=(80, 40), initial_snake_length=3)
         game = FitnessWrapper(game)
-        return snake.Agent(env=game)
+        game = RecordRewardWrapper(game)
+        return snake.Agent(env=game, hidden_nodes=[18, 18])
 
     @classmethod
     def run_experiment(cls):
@@ -28,8 +28,7 @@ class ExperimentRunner(Runner):
         r = cls.__new__(cls)
         r.__init__(agent_builder=cls.build_agent, num_agents=2000, num_champions=20, max_workers=8,
                    info_file_path=info_path)
-        generations = 50
-        f_historical = deque(maxlen=10)
+        generations = 100
 
         human_display = False
         if human_display:
@@ -53,19 +52,24 @@ class ExperimentRunner(Runner):
 
         for s in range(1, generations + 1):
             start_time = time()
-            f = r.single_iteration() # TODO: Split the evaluation and breeding components; save agents after eval.
+            f, info = r.evaluate()
             end_time = time()
-            f_historical.append(sum(f) / len(f))
+            avg_fitness = sum(f) / len(f)
             print(f"Generation {s} \t"
-                  f"Fitness: {f_historical[-1]} (moving avg. {sum(f_historical) / len(f_historical)})\t"
+                  f"Fitness: {avg_fitness})\t"
                   f"Best: {max(f)}\t"
                   f"in {end_time-start_time} s")
             if human_display:
                 with best_genome_lock:
-                    best_genome = copy.deepcopy(r.agents[np.argmax(r.fitnesses)].genome)
+                    best_genome = copy.deepcopy(r.agents[np.argmax(f)].genome)
 
+            # Record info to log.
+            r.record_info()
             # Remove the old agents and save the current ones.
             r.save_agents(directory=saved_agents_dir, overwrite=True)
+
+            # Breed next generation.
+            r.breed_next_generation()
 
         # Wait for threads to terminate.
         if human_display:
@@ -74,16 +78,7 @@ class ExperimentRunner(Runner):
 
 class FitnessWrapper(ForwardingRewardWrapper):
     def __init__(self, env: Game):
-        super(FitnessWrapper, self).__init__(env)
-        self.env = env
-
-    @property
-    @functools.lru_cache(maxsize=1)
-    def info_fields(self):
-        return self.env.info_fields + ['total_reward']
-
-    def create_info_list(self):
-        return super().create_info_list() + self.reward()
+        super().__init__(env)
 
     def reward(self, reward=0):
         snake_length = len(self.env.snake_tail) + 1

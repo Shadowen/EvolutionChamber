@@ -7,15 +7,19 @@ from gym import Env, spaces
 
 from snake.direction import Direction
 
+pygame.init()
+
 
 class Game(Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
-        'video.frames_per_second': 60
+        'video.frames_per_second': 30
     }
     reward_range = (0, np.inf)
 
     action_space = spaces.Discrete(4)
+
+    pygame_font = pygame.font.SysFont('Comic Sans MS', 12)
 
     def __init__(self, *, map_size: Iterable[int], initial_snake_length: int = 3):
         self.initial_snake_length: int = initial_snake_length
@@ -46,7 +50,7 @@ class Game(Env):
         """A minimal observation. Override this as appropriate."""
         return [self.snake_position, self.snake_tail, self.food_position]
 
-    def reward(self):
+    def reward(self, reward=0):
         """The reward function. Should be cumulative for GA. Override this as appropriate."""
         return len(self.snake_tail)
 
@@ -136,9 +140,16 @@ class Game(Env):
             # Food.
             pygame.draw.rect(s, (0, 255, 0), [self.food_position, [1, 1]])
 
-            # Scale surface to window size and blit.
+            # Flip snake game so it shows up properly.
             s = pygame.transform.flip(s, False, True)
+            # Scale surface to window size.
             s = pygame.transform.scale(s, self.map_size * self.render_scale)
+
+            # Add text.
+            textsurface = self.pygame_font.render(f'Life left: {self.life_left}', True, (0, 0, 0))
+            s.blit(textsurface, [0, 0])
+
+            # Blit to window.
             self.window.blit(s, [0, 0])
 
             pygame.display.flip()

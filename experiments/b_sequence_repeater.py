@@ -1,4 +1,3 @@
-from collections import deque
 from time import time
 
 import sequence_repeater
@@ -13,22 +12,33 @@ class ExperimentRunner(Runner):
 
     @classmethod
     def run_experiment(cls):
-        from experiments.util import get_empty_data_file
+        from experiments.util import get_empty_data_file, get_or_make_data_dir
+
+        saved_agents_dir = get_or_make_data_dir('agents')
 
         r = cls.__new__(cls)
         r.__init__(agent_builder=ExperimentRunner.build_agent, num_agents=200, num_champions=2,
                    info_file_path=get_empty_data_file('data.csv'), max_workers=8)
+        r.load_agents(directory=saved_agents_dir, method='SORTED')
+
         generations = 10
-        f_historical = deque(maxlen=5)
         for s in range(1, generations + 1):
             start_time = time()
-            f = r.single_iteration()
+            # Run evaluation.
+            f, info = r.evaluate()
             end_time = time()
-            f_historical.append(sum(f) / len(f))
+            avg_fitness = sum(f) / len(f)
             print(f"Generation {s} \t"
-                  f"Fitness: {f_historical[-1]} (moving avg. {sum(f_historical) / len(f_historical)})\t"
+                  f"Fitness: {avg_fitness})\t"
                   f"Best: {max(f)}\t"
                   f"in {end_time-start_time} s")
+            # Record info to log.
+            r.record_info()
+            # Remove the old agents and save the current ones.
+            r.save_agents(directory=saved_agents_dir, overwrite=True)
+
+            # Breed next generation.
+            r.breed_next_generation()
 
 
 if __name__ == '__main__':

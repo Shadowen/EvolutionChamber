@@ -7,9 +7,9 @@ from genetic.genome import Genome
 
 
 class Agent:
-    def __init__(self, *, env: gym.Env, genome: Genome):
+    def __init__(self, *, env: gym.Env):
         self.env = env
-        self.genome: Genome = genome
+        self.genome: Genome = None
 
     @abstractmethod
     def get_action(self, obs):

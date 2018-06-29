@@ -13,7 +13,7 @@ with open(os.path.join(experiments.util.BASE_DATA_DIR, experiment_name, 'data.cs
     timestep = []
     for row in csv.DictReader(f):
         generation.append(int(row['generation']))
-        timestep.append([int(t) for t in json.loads(row['timesteps'])])
+        timestep.append([int(t) for t in json.loads(row['fitness'])])
     generation = np.array(generation)
     timestep = np.array(timestep)
 

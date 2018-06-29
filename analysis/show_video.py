@@ -16,8 +16,8 @@ class VideoRunner(ExperimentRunner):
         r.load_agents(directory="/home/wesley/data/evolution_chamber/g_smaller_room.py/agents/",
                       method='SORTED')
         for a in r.agents:
-            while True:
-                a.run_iteration(render=True)
+            f, info = a.run_iteration(render=True)
+            print(f"{f}, {info}")
 
 
 if __name__ == '__main__':
