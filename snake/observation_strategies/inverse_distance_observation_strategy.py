@@ -3,19 +3,23 @@ import itertools
 import numpy as np
 from gym import spaces
 
-from snake import Game
+import snake.game
+from snake.observation_strategy import ObservationStrategy
 
 
-class DistanceObservationGame(Game):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.max_distance = np.sqrt(np.sum(self.map_size ** 2))
-        self.observation_space = spaces.Box(low=0, high=self.max_distance, shape=[8, 3],
-                                            dtype=np.float32)
+class InverseDistanceObservationStrategy(ObservationStrategy):
+    def __init__(self, game: snake.game.Game):
+        super().__init__(game)
+        self.max_distance = np.sqrt(np.sum(self.game.map_size ** 2))
+        self._observation_space = spaces.Box(low=0, high=self.max_distance, shape=[8, 3],
+                                             dtype=np.float32)
 
         self.observation_directions = [np.array(d) for d in itertools.product(*([[-1, 0, 1]] * 2)) if not d == (0, 0)]
         assert len(self.observation_directions) == 8, "observation_directions generated improperly!"
-        # Observations to return when nothing is observed in a direction.
+
+    @property
+    def observation_space(self):
+        return self._observation_space
 
     def is_occupied(self, p):
         """
@@ -24,15 +28,15 @@ class DistanceObservationGame(Game):
         :returns boolean representing the presence or absence of an obstacle
         """
         # Check bounds.
-        if np.any(p < [0, 0]) or np.any(p >= self.map_size):
+        if np.any(p < [0, 0]) or np.any(p >= self.game.map_size):
             return True
 
         # Check against snake tail.
-        for t in self.snake_tail:
+        for t in self.game.snake_tail:
             if np.all(p == t):
                 return True
 
-    def observation(self):
+    def observe(self):
         obs = []
         for direction in self.observation_directions:
             wall_distance = 0
@@ -40,22 +44,22 @@ class DistanceObservationGame(Game):
             food_distance = 0
             for d in itertools.count(start=1):
 
-                p = self.snake_position + direction * d
+                p = self.game.snake_position + direction * d
 
                 # Check snake tail.
                 if tail_distance == 0:
-                    for t in self.snake_tail:
+                    for t in self.game.snake_tail:
                         if np.all(p == t):
                             tail_distance = d
 
                 # Check food.
                 if food_distance == 0:
-                    if np.all(p == self.food_position):
+                    if np.all(p == self.game.food_position):
                         food_distance = d
 
                 # Check walls.
                 if wall_distance == 0:
-                    if np.any(p < [0, 0]) or np.any(p >= self.map_size):
+                    if np.any(p < [0, 0]) or np.any(p >= self.game.map_size):
                         wall_distance = d
                         break
 
@@ -70,14 +74,8 @@ class DistanceObservationGame(Game):
         return np.array(obs)
 
     def reward(self, reward=0):
-        snake_length = self.snake_length + 1
+        snake_length = self.game.snake_length + 1
         if snake_length < 10:
-            return (self.timesteps ** 2) * (2 ** snake_length)
+            return (self.game.timesteps ** 2) * (2 ** snake_length)
         else:
-            return (self.timesteps ** 2) * (2 ** 10) * (snake_length - 9)
-
-if __name__ == '__main__':
-    from snake.play_human import play
-
-    env = DistanceObservationGame(map_size=[10, 10])
-    play(env=env)
+            return (self.game.timesteps ** 2) * (2 ** 10) * (snake_length - 9)

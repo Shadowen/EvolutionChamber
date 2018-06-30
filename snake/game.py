@@ -3,14 +3,15 @@ from typing import Iterable
 
 import numpy as np
 import pygame
-from gym import Env, spaces
+from gym import spaces
 
 from snake.direction import Direction
+from snake.observation_strategy import ObservationStrategy
 
 pygame.init()
 
 
-class Game(Env):
+class Game:
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 60
@@ -19,16 +20,15 @@ class Game(Env):
 
     action_space = spaces.Discrete(4)
 
-    pygame_font = pygame.font.SysFont('Comic Sans MS', 12)
+    pygame_font = pygame.font.SysFont('Arial', 12)
 
-    def __init__(self, *, map_size: Iterable[int], initial_snake_length: int = 3):
+    def __init__(self, *, map_size: Iterable[int], initial_snake_length: int = 3, observation_strategy):
         self.initial_snake_length: int = initial_snake_length
         self.map_size: np.ndarray = np.array(map_size)
         self.render_scale: int = 10
 
-        self.observation_space = spaces.Box(low=np.array([0, 0] * 3), high=np.array(self.map_size.tolist() * 3),
-                                            dtype=np.float32)
-        self.info_fields = ['timesteps', 'snake_length', 'life_left']
+        self.observation_strategy: ObservationStrategy = observation_strategy(self)
+        self.observation_space = self.observation_strategy.observation_space
 
         self.timesteps = None
 
@@ -46,12 +46,8 @@ class Game(Env):
         self.pygame_clock: pygame.time.Clock = None
         self.window: pygame.SurfaceType = None
 
-    def observation(self):
-        """A minimal observation. Override this as appropriate."""
-        return [self.snake_position, self.snake_tail, self.food_position]
-
-    def reward(self, reward=0):
-        """The reward function. Should be cumulative for GA. Override this as appropriate."""
+    def reward(self):
+        """The fitness function. Override this as appropriate."""
         return len(self.snake_tail)
 
     def reset(self):
@@ -66,7 +62,11 @@ class Game(Env):
         self.life_left = 200
 
         self.food_position = self._get_free_position()
-        return self.observation()
+        return self.observation_strategy.observe()
+
+    @property
+    def info_fields(self):
+        return ['timesteps', 'snake_length', 'life_left']
 
     def create_info_list(self):
         return [self.timesteps, len(self.snake_tail), self.life_left]
@@ -90,7 +90,7 @@ class Game(Env):
         if np.all(self.snake_position == self.food_position):
             self.life_left += 100
             self.food_position = self._get_free_position()
-            self.snake_length += 4 if self.snake_length<=10 else 1
+            self.snake_length += 4 if self.snake_length <= 10 else 1
 
         done = False
         # Collide with self.
@@ -106,9 +106,12 @@ class Game(Env):
         if self.life_left <= 0:
             done = True
 
-        return self.observation(), self.reward(), done, self.create_info_list()
+        return self.observation_strategy.observe(), self.reward(), done, self.create_info_list()
 
     def _get_free_position(self):
+        if len(self.snake_tail) + 1 >= np.prod(self.map_size):
+            raise NotImplementedError()  # TODO: Handle case of snake filling up entire area.
+
         while True:
             position = np.array([np.random.randint(self.map_size[0]), np.random.randint(self.map_size[1])])
             if np.all(position == self.snake_position):
