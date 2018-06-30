@@ -5,15 +5,20 @@ import numpy as np
 import snake
 from experiments.util import *
 from genetic import Runner
-from snake import DistanceObservationGame
+from snake import Game
+from snake.agent import Agent
+from snake.observation_strategies.inverse_distance_observation_strategy import InverseDistanceObservationStrategy
+from snake.reward_strategies.square_exp_reward_strategy import SquareExpRewardStrategy
 
 
 class ExperimentRunner(Runner):
 
     @staticmethod
     def build_agent():
-        game = DistanceObservationGame(map_size=(80, 40), initial_snake_length=3)
-        return snake.Agent(env=game, hidden_nodes=[18, 18])
+        game = Game(map_size=(80, 40), initial_snake_length=3,
+                    create_observation_strategy=InverseDistanceObservationStrategy,
+                    create_reward_strategy=SquareExpRewardStrategy)
+        return snake.agent.Agent(env=game, hidden_nodes=[18, 18])
 
     @classmethod
     def run_experiment(cls):

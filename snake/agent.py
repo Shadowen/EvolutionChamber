@@ -6,11 +6,12 @@ import numpy as np
 import genetic
 from genetic import Genome
 from numpy_util import sigmoid, cat_ones
-from snake import Direction
+from snake.direction import Direction
+from . import Game
 
 
 class Agent(genetic.Agent):
-    def __init__(self, *, env: gym.Env, hidden_nodes: List[int]):
+    def __init__(self, *, env: Game, hidden_nodes: List[int]):
         super().__init__(env=env)
         self.hidden_nodes: List[int] = hidden_nodes
         self.genome = self._init_genome(env.observation_space, env.action_space)

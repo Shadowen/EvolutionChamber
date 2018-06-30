@@ -5,7 +5,7 @@ import snake.observation_strategy
 
 
 class DefaultObservationStrategy(snake.observation_strategy.ObservationStrategy):
-    def __init__(self, game: snake.game.Game):
+    def __init__(self, game: 'snake.game.Game'):
         super().__init__(game)
         self._observation_space = gym.spaces.Box(low=np.array([0, 0] * 3),
                                                  high=np.array(self.game.map_size.tolist() * 3),

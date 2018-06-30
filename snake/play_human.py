@@ -52,6 +52,8 @@ def play(env=None):
 if __name__ == "__main__":
     from snake import Game
     from snake.observation_strategies.default_observation_strategy import DefaultObservationStrategy
-    from snake.observation_strategies.inverse_distance_observation_strategy import InverseDistanceObservationStrategy
+    from snake.reward_strategies.default_reward_strategy import DefaultRewardStrategy
 
-    play(Game(map_size=[10, 10], initial_snake_length=3, observation_strategy=InverseDistanceObservationStrategy))
+    play(Game(map_size=[10, 10], initial_snake_length=3,
+              create_observation_strategy=DefaultObservationStrategy,
+              create_reward_strategy=DefaultRewardStrategy))

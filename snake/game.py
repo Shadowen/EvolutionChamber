@@ -6,7 +6,10 @@ import pygame
 from gym import spaces
 
 from snake.direction import Direction
+from snake.observation_strategies.default_observation_strategy import DefaultObservationStrategy
 from snake.observation_strategy import ObservationStrategy
+from snake.reward_strategies.default_reward_strategy import DefaultRewardStrategy
+from snake.reward_strategy import RewardStrategy
 
 pygame.init()
 
@@ -22,13 +25,16 @@ class Game:
 
     pygame_font = pygame.font.SysFont('Arial', 12)
 
-    def __init__(self, *, map_size: Iterable[int], initial_snake_length: int = 3, observation_strategy):
+    def __init__(self, *, map_size: Iterable[int], initial_snake_length: int = 3,
+                 create_observation_strategy=DefaultObservationStrategy, create_reward_strategy=DefaultRewardStrategy):
         self.initial_snake_length: int = initial_snake_length
         self.map_size: np.ndarray = np.array(map_size)
         self.render_scale: int = 10
 
-        self.observation_strategy: ObservationStrategy = observation_strategy(self)
+        self.observation_strategy: ObservationStrategy = create_observation_strategy(self)
         self.observation_space = self.observation_strategy.observation_space
+
+        self.reward_strategy: RewardStrategy = create_reward_strategy(self)
 
         self.timesteps = None
 
@@ -45,10 +51,6 @@ class Game:
         # Rendering.
         self.pygame_clock: pygame.time.Clock = None
         self.window: pygame.SurfaceType = None
-
-    def reward(self):
-        """The fitness function. Override this as appropriate."""
-        return len(self.snake_tail)
 
     def reset(self):
         self.timesteps = 0
@@ -106,7 +108,7 @@ class Game:
         if self.life_left <= 0:
             done = True
 
-        return self.observation_strategy.observe(), self.reward(), done, self.create_info_list()
+        return self.observation_strategy.observe(), self.reward_strategy.reward(), done, self.create_info_list()
 
     def _get_free_position(self):
         if len(self.snake_tail) + 1 >= np.prod(self.map_size):
