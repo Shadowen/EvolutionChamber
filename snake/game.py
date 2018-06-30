@@ -1,17 +1,17 @@
+import functools
 from collections import deque
-from typing import Iterable
+from typing import List, Iterable, Any
 
 import numpy as np
 import pygame
 from gym import spaces
 
 from snake.direction import Direction
+from snake.info_emitter import InfoEmitter, PropertyEmitter
 from snake.observation_strategies.default_observation_strategy import DefaultObservationStrategy
 from snake.observation_strategy import ObservationStrategy
 from snake.reward_strategies.default_reward_strategy import DefaultRewardStrategy
 from snake.reward_strategy import RewardStrategy
-
-pygame.init()
 
 
 class Game:
@@ -23,13 +23,11 @@ class Game:
 
     action_space = spaces.Discrete(4)
 
-    pygame_font = pygame.font.SysFont('Arial', 12)
-
     def __init__(self, *, map_size: Iterable[int], initial_snake_length: int = 3,
                  create_observation_strategy=DefaultObservationStrategy, create_reward_strategy=DefaultRewardStrategy):
+        # Game settings.
         self.initial_snake_length: int = initial_snake_length
         self.map_size: np.ndarray = np.array(map_size)
-        self.render_scale: int = 10
 
         self.observation_strategy: ObservationStrategy = create_observation_strategy(self)
         self.observation_space = self.observation_strategy.observation_space
@@ -49,10 +47,18 @@ class Game:
         self.food_position: np.ndarray[int] = None
 
         # Rendering.
+        self.render_scale: int = 10
         self.pygame_clock: pygame.time.Clock = None
+        self.pygame_font: pygame.font.Font = None
         self.window: pygame.SurfaceType = None
 
-    def reset(self):
+        # Info dict.
+        self._info_emitters: List[InfoEmitter] = []
+        self.register_info_emitter(PropertyEmitter('timesteps'))
+        self.register_info_emitter(PropertyEmitter('snake_length'))
+        self.register_info_emitter(PropertyEmitter('life_left'))
+
+    def reset(self) -> Any:
         self.timesteps = 0
 
         self.snake_position = np.array(self.map_size / 2, dtype=int)
@@ -66,12 +72,16 @@ class Game:
         self.food_position = self._get_free_position()
         return self.observation_strategy.observe()
 
-    @property
-    def info_fields(self):
-        return ['timesteps', 'snake_length', 'life_left']
+    def register_info_emitter(self, emitter: InfoEmitter) -> None:
+        self._info_emitters.append(emitter)
+        self.get_info_fields.cache_clear()
 
-    def create_info_list(self):
-        return [self.timesteps, len(self.snake_tail), self.life_left]
+    @functools.lru_cache(maxsize=1)
+    def get_info_fields(self) -> List[str]:
+        return [e.name for e in self._info_emitters]
+
+    def create_info_list(self) -> List[Any]:
+        return [e.emit(self) for e in self._info_emitters]
 
     def step(self, action: Direction):
         self.timesteps += 1
@@ -130,6 +140,8 @@ class Game:
     def render(self, mode='human'):
         if mode == 'human':
             if self.window is None:
+                pygame.init()
+                self.pygame_font = pygame.font.SysFont('Arial', 12)
                 self.pygame_clock = pygame.time.Clock()
                 self.window = pygame.display.set_mode(self.map_size * self.render_scale, pygame.SRCALPHA)
                 pygame.display.set_caption("Snake")

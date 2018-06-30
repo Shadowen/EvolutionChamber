@@ -19,7 +19,6 @@ class ExperimentRunner(Runner):
         r = cls.__new__(cls)
         r.__init__(agent_builder=ExperimentRunner.build_agent, num_agents=200, num_champions=2,
                    info_file_path=get_empty_data_file('data.csv'), max_workers=8)
-        r.load_agents(directory=saved_agents_dir, method='SORTED')
 
         generations = 10
         for s in range(1, generations + 1):
@@ -38,7 +37,7 @@ class ExperimentRunner(Runner):
             r.save_agents(directory=saved_agents_dir, overwrite=True)
 
             # Breed next generation.
-            r.breed_next_generation()
+            r.breed()
 
 
 if __name__ == '__main__':

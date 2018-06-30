@@ -1,4 +1,5 @@
 import snake
+import snake.agent
 from experiments import a_basic_experiment
 from gym_util import MaxTimestepsWrapper
 from snake import Game
@@ -12,7 +13,7 @@ class ExperimentRunner(a_basic_experiment.ExperimentRunner):
         game = Game(map_size=(20, 20), create_observation_strategy=InverseDistanceObservationStrategy,
                     create_reward_strategy=SurvivalRewardStrategy)
         game = MaxTimestepsWrapper(game, max_timesteps=1000)
-        return snake.Agent(env=game, hidden_nodes=[18, 18])
+        return snake.agent.Agent(env=game, hidden_nodes=[18, 18])
 
 
 if __name__ == '__main__':

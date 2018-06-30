@@ -24,9 +24,7 @@ class ExperimentRunner(Runner):
     def run_experiment(cls):
         np.random.seed(1)
         saved_agents_dir = get_or_make_data_dir('agents')
-        # TODO(wheung): Figure out how to log data.
-        # info_path = get_empty_data_file('data.csv')
-        info_path = None
+        info_path = get_empty_data_file('data.csv')
 
         r = cls.__new__(cls)
         r.__init__(agent_builder=cls.build_agent, num_agents=2000, num_champions=20, max_workers=8,
@@ -72,7 +70,7 @@ class ExperimentRunner(Runner):
             r.save_agents(directory=saved_agents_dir, overwrite=True)
 
             # Breed next generation.
-            r.breed_next_generation()
+            r.breed()
 
         # Wait for threads to terminate.
         if human_display:

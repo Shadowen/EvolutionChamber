@@ -9,7 +9,8 @@ from snake import Game
 
 class Agent(genetic.Agent):
     def __init__(self, *, env: Game):
-        super().__init__(env=env, genome=self._init_genome(env.observation_space, env.action_space))
+        super().__init__(env=env)
+        self.genome = self._init_genome(env.observation_space, env.action_space)
 
     @staticmethod
     def _init_genome(observation_space: gym.Space, action_space: gym.Space) -> Genome:

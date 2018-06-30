@@ -1,2 +1,1 @@
 from .max_timesteps_wrapper import MaxTimestepsWrapper
-from .record_reward_wrapper import RecordRewardWrapper

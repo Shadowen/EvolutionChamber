@@ -45,7 +45,7 @@ class ExperimentRunner(a_basic_experiment.ExperimentRunner):
             r.save_agents(directory=saved_agents_dir, overwrite=True)
 
             # Breed next generation.
-            r.breed_next_generation()
+            r.breed()
 
 
 class Game(DistanceObservationGame):

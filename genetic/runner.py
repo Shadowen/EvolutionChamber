@@ -27,7 +27,7 @@ class Runner:
         self.info_file_writer = None
         if info_file_path is not None:
             self.info_file = open(info_file_path, 'w', buffering=1)
-            self.info_file_writer = csv.DictWriter(self.info_file, ['generation'] + self.envType.info_fields)
+            self.info_file_writer = csv.DictWriter(self.info_file, ['generation'] + self.envType.get_info_fields())
             self.info_file_writer.writeheader()
         self.max_workers = max_workers
 
@@ -48,7 +48,7 @@ class Runner:
         self.fitnesses, self.infos = zip(*outputs)
         return self.fitnesses, self.infos
 
-    def breed_next_generation(self) -> None:
+    def breed(self) -> None:
         """Modify the genomes of the agents to create the next generation."""
         self.generation += 1
 
@@ -73,7 +73,7 @@ class Runner:
         """Record the given info dict to disk."""
         if self.info_file_writer is not None:
             d = {'generation': self.generation}
-            for a, k in enumerate(self.envType.info_fields):
+            for a, k in enumerate(self.envType.get_info_fields()):
                 d[k] = [i[a] for i in self.infos]
             self.info_file_writer.writerow(d)
 
